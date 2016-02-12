@@ -1,0 +1,34 @@
+{
+  "name": "nilportugues/mongodb-repository",
+  "description": "MongoDB Repository implementation",
+  "keywords": ["mongo", "mongoDB", "repository", "cache", "ddd", "hexagonal", "ports and adapters", "ports", "adapters", "repository", "pageable", "pagination", "nil portugues", "nilportugues"],
+  "type": "library",
+  "homepage": "http://nilportugues.com",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Nil Portugués",
+      "email": "contact@nilportugues.com"
+    }
+  ],
+  "require": {
+    "mongodb/mongodb": "~1.0",
+    "nilportugues/repository": "^2.0",
+    "nilportugues/assert": "^1.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "4.8.*",
+    "fabpot/php-cs-fixer": "1.9.*"
+  },
+  "autoload": {
+    "psr-4": {
+      "NilPortugues\\Foundation\\Infrastructure\\Model\\Repository\\MongoDB\\": "src",
+      "NilPortugues\\Example\\Repository\\": "example/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "NilPortugues\\Tests\\Foundation\\Infrastructure\\Model\\Repository\\MongoDB\\": "tests/"
+    }
+  }
+}
