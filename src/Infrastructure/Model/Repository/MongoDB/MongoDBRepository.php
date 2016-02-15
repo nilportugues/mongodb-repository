@@ -90,6 +90,7 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
     {
         $collection = $this->getCollection();
         $options = $this->options;
+        $filterArray = [];
 
         $this->applyFiltering($filter, $filterArray);
         $this->applySorting($sort, $options);
@@ -114,9 +115,8 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
      * @param Filter $filter
      * @param array  $filterArray
      */
-    protected function applyFiltering(Filter $filter, array &$filterArray)
+    protected function applyFiltering(Filter $filter = null, array &$filterArray)
     {
-        $filterArray = [];
         if (null !== $filter) {
             MongoDBFilter::filter($filterArray, $filter);
         }
@@ -126,7 +126,7 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
      * @param Sort  $sort
      * @param array $options
      */
-    protected function applySorting(Sort $sort, array &$options)
+    protected function applySorting(Sort $sort = null, array &$options)
     {
         if (null !== $sort) {
             MongoDBSorter::sort($options, $sort);
@@ -137,7 +137,7 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
      * @param Fields $fields
      * @param array  $options
      */
-    protected function getSpecificFields(Fields $fields, array &$options)
+    protected function getSpecificFields(Fields $fields = null, array &$options)
     {
         if (null !== $fields) {
             $fields = $fields->get();
@@ -160,6 +160,7 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
         $options = $this->options;
         $collection = $this->getCollection();
 
+        $filterArray = [];
         $this->applyFiltering($filter, $filterArray);
 
         return $collection->count($filterArray, $options);
@@ -268,6 +269,7 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
             return;
         }
 
+        $filterArray = [];
         $this->applyFiltering($filter, $filterArray);
 
         $collection->deleteMany($filterArray, $options);
