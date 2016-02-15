@@ -91,15 +91,8 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
         $collection = $this->getCollection();
         $options = $this->options;
 
-        $filterArray = [];
-        if (null !== $filter) {
-            MongoDBFilter::filter($filterArray, $filter);
-        }
-
-        if (null !== $sort) {
-            MongoDBSorter::sort($options, $sort);
-        }
-
+        $this->applyFiltering($filter, $filterArray);
+        $this->applySorting($sort, $options);
         $this->getSpecificFields($fields, $options);
 
         return $collection->find($filterArray, $options)->toArray();
@@ -115,6 +108,29 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
         }
 
         return $this->collection;
+    }
+
+    /**
+     * @param Filter $filter
+     * @param array  $filterArray
+     */
+    protected function applyFiltering(Filter $filter, array &$filterArray)
+    {
+        $filterArray = [];
+        if (null !== $filter) {
+            MongoDBFilter::filter($filterArray, $filter);
+        }
+    }
+
+    /**
+     * @param Sort  $sort
+     * @param array $options
+     */
+    protected function applySorting(Sort $sort, array &$options)
+    {
+        if (null !== $sort) {
+            MongoDBSorter::sort($options, $sort);
+        }
     }
 
     /**
@@ -144,10 +160,7 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
         $options = $this->options;
         $collection = $this->getCollection();
 
-        $filterArray = [];
-        if (null !== $filter) {
-            MongoDBFilter::filter($filterArray, $filter);
-        }
+        $this->applyFiltering($filter, $filterArray);
 
         return $collection->count($filterArray, $options);
     }
@@ -175,19 +188,28 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
     public function find(Identity $id, Fields $fields = null)
     {
         $options = $this->options;
-
         $this->getSpecificFields($fields, $options);
 
+        /** @var BSONDocument $result */
+        $result = $this->getCollection()->findOne($this->applyIdFiltering($id), $options);
+
+        return (!empty($result)) ? $result : [];
+    }
+
+    /**
+     * @param Identity $id
+     *
+     * @return array
+     */
+    protected function applyIdFiltering(Identity $id)
+    {
         try {
             $filter = [self::MONGODB_OBJECT_ID => new ObjectID($id->id())];
         } catch (InvalidArgumentException $e) {
             $filter = [$this->primaryKey => $id->id()];
         }
 
-        /** @var BSONDocument $result */
-        $result = $this->getCollection()->findOne($filter, $options);
-
-        return (!empty($result)) ? $result : [];
+        return $filter;
     }
 
     /**
@@ -224,13 +246,7 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
      */
     public function remove(Identity $id)
     {
-        try {
-            $filter = [self::MONGODB_OBJECT_ID => new ObjectID($id->id())];
-        } catch (InvalidArgumentException $e) {
-            $filter = [$this->primaryKey => $id->id()];
-        }
-
-        $this->getCollection()->deleteOne($filter, $this->options);
+        $this->getCollection()->deleteOne($this->applyIdFiltering($id), $this->options);
     }
 
     /**
@@ -252,10 +268,7 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
             return;
         }
 
-        $filterArray = [];
-        if (null !== $filter) {
-            MongoDBFilter::filter($filterArray, $filter);
-        }
+        $this->applyFiltering($filter, $filterArray);
 
         $collection->deleteMany($filterArray, $options);
     }
