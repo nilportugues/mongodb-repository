@@ -94,7 +94,7 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
 
         $this->applyFiltering($filter, $filterArray);
         $this->applySorting($sort, $options);
-        $this->getSpecificFields($fields, $options);
+        $this->fetchSpecificFields($fields, $options);
 
         return $collection->find($filterArray, $options)->toArray();
     }
@@ -137,7 +137,7 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
      * @param Fields $fields
      * @param array  $options
      */
-    protected function getSpecificFields(Fields $fields = null, array &$options)
+    protected function fetchSpecificFields(Fields $fields = null, array &$options)
     {
         if (null !== $fields) {
             $fields = $fields->get();
@@ -189,7 +189,7 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
     public function find(Identity $id, Fields $fields = null)
     {
         $options = $this->options;
-        $this->getSpecificFields($fields, $options);
+        $this->fetchSpecificFields($fields, $options);
 
         /** @var BSONDocument $result */
         $result = $this->getCollection()->findOne($this->applyIdFiltering($id), $options);
