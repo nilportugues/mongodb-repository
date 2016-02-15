@@ -22,7 +22,7 @@
   },
   "autoload": {
     "psr-4": {
-      "NilPortugues\\Foundation\\Infrastructure\\Model\\Repository\\MongoDB\\": "src",
+      "NilPortugues\\Foundation\\Infrastructure\\Model\\Repository\\MongoDB\\": "src/Infrastructure/Model/Repository/MongoDB/",
       "NilPortugues\\Example\\Repository\\": "example/"
     }
   },
