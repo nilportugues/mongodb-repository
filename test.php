@@ -71,12 +71,15 @@ print_r(
 
 $mongoRepository = new MongoDBRepository($client, 'demo', 'zips');
 
-$filter = new Filter();
-$filter->must()->contain('city', 'WA');
-
 $sort = new Sort(['city'], new Order('ASC'));
 
-$pageable = new Pageable(2, 20, $sort, $filter, new Fields(['city', 'state']));
+$filter = new Filter();
+$filter->must()->startsWith('city', 'WA');
+$filter->must()->endsWith('_id', '7');
+
+$fields = new Fields(['city', 'state']);
+
+$pageable = new Pageable(2, 20, $sort, $filter, $fields);
 $results = $mongoRepository->findAll($pageable);
 
 print_r($results->content());
