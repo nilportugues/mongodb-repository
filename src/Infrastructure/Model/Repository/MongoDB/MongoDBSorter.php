@@ -22,11 +22,14 @@ class MongoDBSorter
      * @param array         $options
      * @param SortInterface $sort
      */
-    public static function sort(array &$options, SortInterface $sort)
+    public static function sort(array &$options, SortInterface $sort = null)
     {
-        /** @var Order $order */
-        foreach ($sort->orders() as $propertyName => $order) {
-            $options['sort'][$propertyName] = $order->isAscending() ? 1 : 0;
+        if (null !== $sort) {
+            /** @var Order[] $orders */
+            $orders = (array) $sort->orders();
+            foreach ($orders as $propertyName => $order) {
+                $options['sort'][$propertyName] = $order->isAscending() ? 1 : -1;
+            }
         }
     }
 }

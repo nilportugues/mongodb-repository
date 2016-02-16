@@ -23,6 +23,7 @@ use NilPortugues\Foundation\Domain\Model\Repository\Contracts\PageRepository;
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\ReadRepository;
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Sort;
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\WriteRepository;
+use NilPortugues\Foundation\Domain\Model\Repository\Page as ResultPage;
 
 /**
  * Class MongoDBRepository.
@@ -286,5 +287,30 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
     {
         $options = $this->options;
         $collection = $this->getCollection();
+
+        if ($pageable) {
+            $filterArray = [];
+            $this->applyFiltering($pageable->filters(), $filterArray);
+            $this->applySorting($pageable->sortings(), $options);
+            $this->fetchSpecificFields($pageable->fields(), $options);
+            $total = $collection->count($filterArray, $options);
+
+            $page = $pageable->pageNumber() - 1;
+            if ($page < 0) {
+                $page = 0;
+            }
+
+            $options['limit'] = $pageable->pageSize();
+            $options['skip'] = $pageable->pageSize() * ($page);
+
+            return new ResultPage(
+                $collection->find($filterArray, $options)->toArray(),
+                $total,
+                $pageable->pageNumber(),
+                ceil($total / $pageable->pageSize())
+            );
+        }
+
+        return new ResultPage($collection->find([], $options)->toArray(), $collection->count([], $options), 1, 1);
     }
 }
