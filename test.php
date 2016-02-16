@@ -1,5 +1,6 @@
 <?php
 use NilPortugues\Foundation\Domain\Model\Repository\Fields;
+use NilPortugues\Foundation\Domain\Model\Repository\Filter;
 use NilPortugues\Foundation\Domain\Model\Repository\Order;
 use NilPortugues\Foundation\Domain\Model\Repository\Pageable;
 use NilPortugues\Foundation\Domain\Model\Repository\Sort;
@@ -41,9 +42,9 @@ class ObjectId implements \NilPortugues\Foundation\Domain\Model\Repository\Contr
 $client = new \MongoDB\Client();
 
 $mongoRepository = new MongoDBRepository($client, 'test', 'users');
-
-var_dump($mongoRepository->count());
 /*
+var_dump($mongoRepository->count());
+
 var_dump(
     $mongoRepository->exists(
         new ObjectId('56c241f74985af52b3434277')
@@ -70,7 +71,12 @@ print_r(
 
 $mongoRepository = new MongoDBRepository($client, 'demo', 'zips');
 
-$pageable = new Pageable(2, 20, null, null, new Fields(['city', 'state']));
+$filter = new Filter();
+$filter->must()->contain('city', 'WA');
+
+$sort = new Sort(['city'], new Order('ASC'));
+
+$pageable = new Pageable(2, 20, $sort, $filter, new Fields(['city', 'state']));
 $results = $mongoRepository->findAll($pageable);
 
 print_r($results->content());

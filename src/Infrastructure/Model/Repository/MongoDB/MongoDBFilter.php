@@ -10,6 +10,7 @@
  */
 namespace NilPortugues\Foundation\Infrastructure\Model\Repository\MongoDB;
 
+use NilPortugues\Foundation\Domain\Model\Repository\Contracts\BaseFilter;
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Filter as FilterInterface;
 
 /**
@@ -21,15 +22,15 @@ class MongoDBFilter
     const MUST = 'must';
     const SHOULD = 'should';
 
-    const CONTAINS_PATTERN = 'function() { var p = /%s/i; return p.test(this.%s); }';
-    const STARTS_WITH_PATTERN = 'function() { var p = /^%s/i; return p.test(this.%s); }';
-    const ENDS_WITH_PATTERN = 'function() { var p = /%s$/i; return p.test(this.%s); }';
-    const EQUALS_PATTERN = 'function() { var p = /^%s/i; return p.test(this.%s); }';
+    const CONTAINS_PATTERN = '/%s/i.test(this.%s)';
+    const STARTS_WITH_PATTERN = '/^%s/i.test(this.%s)';
+    const ENDS_WITH_PATTERN = '/%s$/i.test(this.%s)';
+    const EQUALS_PATTERN = '/^%s/i.test(this.%s)';
 
-    const NOT_CONTAINS_PATTERN = 'function() { var p = /%s/i; return !p.test(this.%s); }';
-    const NOT_STARTS_WITH_PATTERN = 'function() { var p = /^%s/i; return !p.test(this.%s); }';
-    const NOT_ENDS_WITH_PATTERN = 'function() { var p = /%s$/i; return !p.test(this.%s); }';
-    const NOT_EQUALS_PATTERN = 'function() { var p = /^%s$/i; return !p.test(this.%s); }';
+    const NOT_CONTAINS_PATTERN = '!(/%s/i.test(this.%s))';
+    const NOT_STARTS_WITH_PATTERN = '!(/^%s/i.test(this.%s))';
+    const NOT_ENDS_WITH_PATTERN = '!(/%s$/i.test(this.%s))';
+    const NOT_EQUALS_PATTERN = '!(/^%s$/i.test(this.%s))';
 
     /**
      * @param array           $filterArray
@@ -68,16 +69,113 @@ class MongoDBFilter
     {
         switch ($condition) {
             case self::MUST:
-               // self::apply($where, $filters, 'AND');
+                self::apply($filterArray, $filters, '$and');
                 break;
 
             case self::MUST_NOT:
-               // self::apply($where, $filters, 'AND NOT');
+                $not = [];
+                self::apply($not, $filters, '$and');
+                if (!empty($not)) {
+                    $filterArray['$not'] = $not;
+                }
                 break;
 
             case self::SHOULD:
-                //self::apply($where, $filters, 'OR');
+                self::apply($filterArray, $filters, '$or');
                 break;
+        }
+    }
+
+    /**
+     * @param array $filterArray
+     * @param array $filters
+     * @param       $boolean
+     */
+    protected static function apply(array &$filterArray, array $filters, $boolean)
+    {
+        foreach ($filters as $filterName => $valuePair) {
+            foreach ($valuePair as $key => $value) {
+                if (is_array($value) && count($value) > 0) {
+                    if (count($value) > 1) {
+                        switch ($filterName) {
+                            case BaseFilter::RANGES:
+                                $filterArray[$boolean][$key]['$gte'] = $value[0];
+                                $filterArray[$boolean][$key]['$lte'] = $value[1];
+                                break;
+                            case BaseFilter::NOT_RANGES:
+                                $filterArray[$boolean][$key]['$lt'] = $value[0];
+                                $filterArray[$boolean][$key]['$gt'] = $value[1];
+                                break;
+                            case BaseFilter::GROUP:
+                                $filterArray[$boolean][$key]['$in'] = $value;
+                                break;
+                        }
+                        break;
+                    }
+                    $value = array_shift($value);
+                }
+
+                switch ($filterName) {
+                    case BaseFilter::GREATER_THAN_OR_EQUAL:
+                        $filterArray[$boolean][$key]['$gte'] = $value;
+                        break;
+                    case BaseFilter::GREATER_THAN:
+                        $filterArray[$boolean][$key]['$gt'] = $value;
+                        break;
+                    case BaseFilter::LESS_THAN_OR_EQUAL:
+                        $filterArray[$boolean][$key]['$lte'] = $value;
+                        break;
+                    case BaseFilter::LESS_THAN:
+                        $filterArray[$boolean][$key]['$lt'] = $value;
+                        break;
+                    case BaseFilter::CONTAINS:
+                        $filterArray['$where'][] = sprintf(
+                            ('$not' !== $boolean) ? self::CONTAINS_PATTERN : self::NOT_CONTAINS_PATTERN,
+                            $value,
+                            $key
+                        );
+                        break;
+                    case BaseFilter::NOT_CONTAINS:
+                        $filterArray['$where'][] = sprintf(
+                            ('$not' !== $boolean) ? self::NOT_CONTAINS_PATTERN : self::CONTAINS_PATTERN,
+                            $value,
+                            $key
+                        );
+                        break;
+                    case BaseFilter::STARTS_WITH:
+                        $filterArray['$where'][] = sprintf(
+                            ('$not' !== $boolean) ? self::STARTS_WITH_PATTERN : self::NOT_STARTS_WITH_PATTERN,
+                            $value,
+                            $key
+                        );
+                        break;
+                    case BaseFilter::ENDS_WITH:
+                        $filterArray['$where'][] = sprintf(
+                            ('$not' !== $boolean) ? self::ENDS_WITH_PATTERN : self::NOT_ENDS_WITH_PATTERN,
+                            $value,
+                            $key
+                        );
+                        break;
+                    case BaseFilter::EQUALS:
+                        $filterArray['$where'][] = sprintf(
+                            ('$not' !== $boolean) ? self::EQUALS_PATTERN : self::NOT_EQUALS_PATTERN,
+                            $value,
+                            $key
+                        );
+                        break;
+                    case BaseFilter::NOT_EQUAL:
+                        $filterArray['$where'][] = sprintf(
+                            ('$not' !== $boolean) ? self::NOT_EQUALS_PATTERN : self::EQUALS_PATTERN,
+                            $value,
+                            $key
+                        );
+                        break;
+                }
+            }
+        }
+
+        if (!empty($filterArray['$where'])) {
+            $filterArray['$where'] = 'return '.implode(('$or' === $boolean) ? '||' : '&&', $filterArray['$where']);
         }
     }
 }
