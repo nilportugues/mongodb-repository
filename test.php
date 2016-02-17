@@ -74,10 +74,12 @@ $mongoRepository = new MongoDBRepository($client, 'demo', 'zips');
 $sort = new Sort(['city'], new Order('ASC'));
 
 $filter = new Filter();
-$filter->must()->startsWith('city', 'WA');
-$filter->must()->endsWith('_id', '7');
 
-$fields = new Fields(['city', 'state']);
+$filter->must()->beGreaterThan('pop', 15000);
+$filter->must()->beLessThan('pop', 20000);
+$filter->mustNot()->equal('state', 'AK');
+
+$fields = new Fields(['city', 'state', 'pop']);
 
 $pageable = new Pageable(2, 20, $sort, $filter, $fields);
 $results = $mongoRepository->findAll($pageable);

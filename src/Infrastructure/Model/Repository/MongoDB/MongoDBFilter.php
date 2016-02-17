@@ -73,11 +73,7 @@ class MongoDBFilter
                 break;
 
             case self::MUST_NOT:
-                $not = [];
-                self::apply($not, $filters, '$and');
-                if (!empty($not)) {
-                    $filterArray['$not'] = $not;
-                }
+                self::apply($filterArray, $filters, '$not');
                 break;
 
             case self::SHOULD:
@@ -99,18 +95,18 @@ class MongoDBFilter
                     if (count($value) > 1) {
                         switch ($filterName) {
                             case BaseFilter::RANGES:
-                                $filterArray[$boolean][$key]['$gte'] = $value[0];
-                                $filterArray[$boolean][$key]['$lte'] = $value[1];
+                                $filterArray[$key]['$gte'] = $value[0];
+                                $filterArray[$key]['$lte'] = $value[1];
                                 break;
                             case BaseFilter::NOT_RANGES:
-                                $filterArray[$boolean][$key]['$lt'] = $value[0];
-                                $filterArray[$boolean][$key]['$gt'] = $value[1];
+                                $filterArray[$key]['$lt'] = $value[0];
+                                $filterArray[$key]['$gt'] = $value[1];
                                 break;
                             case BaseFilter::GROUP:
-                                $filterArray[$boolean][$key]['$in'] = $value;
+                                $filterArray[$key]['$in'] = $value;
                                 break;
                             case BaseFilter::NOT_GROUP:
-                                $filterArray[$boolean][$key]['$nin'] = $value;
+                                $filterArray[$key]['$nin'] = $value;
                                 break;
                         }
                         break;
@@ -120,16 +116,16 @@ class MongoDBFilter
 
                 switch ($filterName) {
                     case BaseFilter::GREATER_THAN_OR_EQUAL:
-                        $filterArray[$boolean][$key]['$gte'] = $value;
+                        $filterArray[$key]['$gte'] = $value;
                         break;
                     case BaseFilter::GREATER_THAN:
-                        $filterArray[$boolean][$key]['$gt'] = $value;
+                        $filterArray[$key]['$gt'] = $value;
                         break;
                     case BaseFilter::LESS_THAN_OR_EQUAL:
-                        $filterArray[$boolean][$key]['$lte'] = $value;
+                        $filterArray[$key]['$lte'] = $value;
                         break;
                     case BaseFilter::LESS_THAN:
-                        $filterArray[$boolean][$key]['$lt'] = $value;
+                        $filterArray[$key]['$lt'] = $value;
                         break;
                     case BaseFilter::CONTAINS:
                         $filterArray['$where'][] = sprintf(
@@ -178,7 +174,7 @@ class MongoDBFilter
         }
 
         if (!empty($filterArray['$where'])) {
-            $filterArray['$where'] = 'return '.implode(('$or' === $boolean) ? '||' : '&&', $filterArray['$where']);
+            $filterArray['$where'] = 'return '.implode(('$or' === $boolean) ? ' || ' : ' && ', $filterArray['$where']);
         }
     }
 }

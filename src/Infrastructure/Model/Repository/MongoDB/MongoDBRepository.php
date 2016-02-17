@@ -293,6 +293,8 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
             $this->applyFiltering($pageable->filters(), $filterArray);
             $this->applySorting($pageable->sortings(), $options);
             $this->fetchSpecificFields($pageable->fields(), $options);
+
+
             $total = $collection->count($filterArray, $options);
             $page = $pageable->pageNumber() - 1;
             if ($page < 0) {
