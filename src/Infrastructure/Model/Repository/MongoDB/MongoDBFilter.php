@@ -27,7 +27,7 @@ class MongoDBFilter
     const ENDS_WITH_PATTERN = '/%s$/i.test(this.%s)';
     const EQUALS_PATTERN = '/^%s/i.test(this.%s)';
 
-    const NOT_CONTAINS_PATTERN = '!(/%s/i.test(this.%s))';
+    const NOT_CONTAINS_PATTERN = '/^((?!%s.))/i.test(this.%s))';
     const NOT_STARTS_WITH_PATTERN = '!(/^%s/i.test(this.%s))';
     const NOT_ENDS_WITH_PATTERN = '!(/%s$/i.test(this.%s))';
     const NOT_EQUALS_PATTERN = '!(/^%s$/i.test(this.%s))';
