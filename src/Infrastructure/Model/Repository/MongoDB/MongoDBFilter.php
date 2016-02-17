@@ -109,6 +109,9 @@ class MongoDBFilter
                             case BaseFilter::GROUP:
                                 $filterArray[$boolean][$key]['$in'] = $value;
                                 break;
+                            case BaseFilter::NOT_GROUP:
+                                $filterArray[$boolean][$key]['$nin'] = $value;
+                                break;
                         }
                         break;
                     }
