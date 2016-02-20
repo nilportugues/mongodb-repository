@@ -61,7 +61,8 @@ use NilPortugues\Foundation\Infrastructure\Model\Repository\Mongodb\MongoDBRepos
 
 class UserRepository extends MongoDBRepository 
 {
-    protected $userAdapter;
+    protected $userAdapter;       
+    protected $primaryKey = 'userId'; //if not set, defaults to "id"
     
     /**
      * @param \MongoDB\Client $client

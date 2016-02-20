@@ -30,6 +30,11 @@ class UserRepository extends MongoDBRepository
     protected $userAdapter;
 
     /**
+     * @var string
+     */
+    protected $primaryKey = 'userId';
+
+    /**
      * UserRepository constructor.
      *
      * @param \MongoDB\Client $client

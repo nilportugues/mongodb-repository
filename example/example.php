@@ -39,9 +39,7 @@ $repository->addAll($models);
 // - getUserAction
 //-------------------------------------------------------------------------------------------------------------
 
-$filter = new Filter();
-$filter->must()->equal('userId', 1);
-print_r($repository->findBy($filter));
+print_r($repository->find(new UserId(1)));
 
 //-------------------------------------------------------------------------------------------------------------
 // - getUsersRegisteredLastMonth
