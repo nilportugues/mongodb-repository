@@ -38,10 +38,10 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
         $client = new Client();
         $this->repository = new ClientsRepository($client, 'example', 'users');
 
-        $client1 = new Clients(1, 'John Doe', (new DateTime('2014-12-11'))->format('Y-m-d H:i:s'), 3, 25.125);
-        $client2 = new Clients(2, 'Junichi Masuda', (new DateTime('2013-02-22'))->format('Y-m-d H:i:s'), 3, 50978.125);
-        $client3 = new Clients(3, 'Shigeru Miyamoto', (new DateTime('2010-12-01'))->format('Y-m-d H:i:s'), 5, 47889850.125);
-        $client4 = new Clients(4, 'Ken Sugimori', (new DateTime('2010-12-10'))->format('Y-m-d H:i:s'), 4, 69158.687);
+        $client1 = new Clients(1, 'John Doe', (new DateTime('2014-12-11')), 3, 25.125);
+        $client2 = new Clients(2, 'Junichi Masuda', (new DateTime('2013-02-22')), 3, 50978.125);
+        $client3 = new Clients(3, 'Shigeru Miyamoto', (new DateTime('2010-12-01')), 5, 47889850.125);
+        $client4 = new Clients(4, 'Ken Sugimori', (new DateTime('2010-12-10')), 4, 69158.687);
 
         $this->repository->addAll([$client1, $client2, $client3, $client4]);
     }
@@ -172,7 +172,7 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
      */
     public function testAdd()
     {
-        $client = new Clients(5, 'Ken Sugimori', (new DateTime('2010-12-10'))->format('Y-m-d H:i:s'), 4, 69158.687);
+        $client = new Clients(5, 'Ken Sugimori', (new DateTime('2010-12-10')), 4, 69158.687);
 
         $this->repository->add($client);
 
@@ -192,8 +192,8 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
      */
     public function testAddAll()
     {
-        $client5 = new Clients(5, 'New Client 1', (new DateTime('2010-12-10'))->format('Y-m-d H:i:s'), 4, 69158.687);
-        $client6 = new Clients(6, 'New Client 2', (new DateTime('2010-12-10'))->format('Y-m-d H:i:s'), 4, 69158.687);
+        $client5 = new Clients(5, 'New Client 1', (new DateTime('2010-12-10')), 4, 69158.687);
+        $client6 = new Clients(6, 'New Client 2', (new DateTime('2010-12-10')), 4, 69158.687);
         $clients = [$client5, $client6];
 
         $this->repository->addAll($clients);
@@ -217,7 +217,7 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
      */
     public function testFind()
     {
-        $expected = new Clients(4, 'Ken Sugimori', (new DateTime('2010-12-10'))->format('Y-m-d H:i:s'), 4, 69158.687);
+        $expected = new Clients(4, 'Ken Sugimori', (new DateTime('2010-12-10')), 4, 69158.687);
 
         $this->assertEquals($expected->id(), $this->repository->find(new ClientId(4))['id']);
     }
@@ -409,7 +409,7 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
     public function testFindByMustIncludeGroup()
     {
         $filter = new Filter();
-        $filter->must()->includeGroup('date', ['2010-12-01 00:00:00', '2010-12-10 00:00:00', '2013-02-22 00:00:00']);
+        $filter->must()->includeGroup('date', [new DateTime('2010-12-01'), new DateTime('2010-12-10'), new DateTime('2013-02-22')]);
 
         $results = $this->repository->findBy($filter);
 
@@ -422,7 +422,7 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
     public function testFindByMustNotIncludeGroupTest()
     {
         $filter = new Filter();
-        $filter->must()->notIncludeGroup('date', ['2010-12-01 00:00:00', '2010-12-10 00:00:00', '2013-02-22 00:00:00']);
+        $filter->must()->notIncludeGroup('date', [new DateTime('2010-12-01'), new DateTime('2010-12-10'), new DateTime('2013-02-22')]);
 
         $results = $this->repository->findBy($filter);
 
@@ -621,7 +621,7 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
     public function testFindByMustNotIncludeGroup()
     {
         $filter = new Filter();
-        $filter->mustNot()->includeGroup('date', ['2010-12-01 00:00:00', '2010-12-10 00:00:00', '2013-02-22 00:00:00']);
+        $filter->mustNot()->includeGroup('date', [new DateTime('2010-12-01'), new DateTime('2010-12-10'), new DateTime('2013-02-22')]);
 
         $results = $this->repository->findBy($filter);
 
@@ -634,7 +634,7 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
     public function testFindByMustNotNotIncludeGroup()
     {
         $filter = new Filter();
-        $filter->mustNot()->notIncludeGroup('date', ['2010-12-01 00:00:00', '2010-12-10 00:00:00', '2013-02-22 00:00:00']);
+        $filter->mustNot()->notIncludeGroup('date', [new DateTime('2010-12-01'), new DateTime('2010-12-10'), new DateTime('2013-02-22')]);
 
         $results = $this->repository->findBy($filter);
         $this->assertEquals(3, count($results));
@@ -820,7 +820,7 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
         $filter = new Filter();
         $filter->must()->contain('name', 'Hideo Kojima');
 
-        $filter->should()->includeGroup('date', ['2010-12-01 00:00:00', '2010-12-10 00:00:00', '2013-02-22 00:00:00']);
+        $filter->should()->includeGroup('date', [new DateTime('2010-12-01'), new DateTime('2010-12-10'), new DateTime('2013-02-22')]);
 
         $results = $this->repository->findBy($filter);
 
@@ -834,7 +834,7 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
     {
         $filter = new Filter();
         $filter->must()->contain('name', 'Hideo Kojima');
-        $filter->should()->notIncludeGroup('date', ['2010-12-01 00:00:00', '2010-12-10 00:00:00', '2013-02-22 00:00:00']);
+        $filter->should()->notIncludeGroup('date', [new DateTime('2010-12-01'), new DateTime('2010-12-10'), new DateTime('2013-02-22')]);
 
         $results = $this->repository->findBy($filter);
 
