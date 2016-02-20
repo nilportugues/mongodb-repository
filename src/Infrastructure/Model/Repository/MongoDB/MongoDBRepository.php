@@ -14,8 +14,10 @@ use MongoDB\BSON\ObjectID;
 use MongoDB\Client;
 use MongoDB\Driver\Exception\InvalidArgumentException;
 use MongoDB\Model\BSONDocument;
+use NilPortugues\Assert\Assert;
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Fields;
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Filter;
+use NilPortugues\Foundation\Domain\Model\Repository\Filter as DomainFilter;
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Identity;
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Page;
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Pageable;
@@ -176,7 +178,7 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
      */
     public function exists(Identity $id)
     {
-        return null !== $this->find($id);
+        return !empty($this->find($id));
     }
 
     /**
@@ -195,7 +197,7 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
         /** @var BSONDocument $result */
         $result = $this->getCollection()->findOne($this->applyIdFiltering($id), $options);
 
-        return (!empty($result)) ? $result : [];
+        return (!empty($result)) ? $result->getArrayCopy() : [];
     }
 
     /**
@@ -224,9 +226,14 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
     public function add(Identity $value)
     {
         $options = $this->options;
+        $value = MongoDBTransformer::create()->serialize($value);
         $id = $this->getCollection()->insertOne($value, $this->options)->getInsertedId();
 
-        return $result = $this->getCollection()->findOne(new EntityId($id), $options);
+        /** @var \MongoDB\Model\BSONDocument $result */
+        $result = $this->getCollection()->findOne(new EntityId($id), $options);
+        $result = (null !== $result) ? $result->getArrayCopy() : [];
+
+        return $result;
     }
 
     /**
@@ -238,7 +245,25 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
      */
     public function addAll(array $values)
     {
-        $this->getCollection()->insertMany($values, $this->options);
+        $store = [];
+        foreach ($values as &$value) {
+            Assert::isInstanceOf($value, Identity::class);
+            $store[] = MongoDBTransformer::create()->serialize($value);
+        }
+
+        /** @var \MongoDB\InsertManyResult $result */
+        $result = $this->getCollection()->insertMany($store, $this->options);
+
+        $stringIds = [];
+        $ids = $result->getInsertedIds();
+        foreach ($ids as $id) {
+            $stringIds[] = (string) $id;
+        }
+
+        $filter = new DomainFilter();
+        $filter->must()->includeGroup('_id', $stringIds);
+
+        return $this->findBy($filter);
     }
 
     /**
@@ -294,12 +319,9 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
             $this->applySorting($pageable->sortings(), $options);
             $this->fetchSpecificFields($pageable->fields(), $options);
 
-
             $total = $collection->count($filterArray, $options);
             $page = $pageable->pageNumber() - 1;
-            if ($page < 0) {
-                $page = 0;
-            }
+            $page = ($page < 0) ? 1 : $page;
 
             $options['limit'] = $pageable->pageSize();
             $options['skip'] = $pageable->pageSize() * ($page);

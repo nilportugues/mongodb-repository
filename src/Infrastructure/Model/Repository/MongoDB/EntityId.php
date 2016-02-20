@@ -13,7 +13,8 @@ namespace NilPortugues\Foundation\Infrastructure\Model\Repository\MongoDB;
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Identity;
 
 /**
- * Class ObjectId.
+ * Class EntityId
+ * @package NilPortugues\Foundation\Infrastructure\Model\Repository\MongoDB
  */
 class EntityId implements Identity
 {

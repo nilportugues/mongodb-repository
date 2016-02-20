@@ -12,8 +12,9 @@
     }
   ],
   "require": {
-    "mongodb/mongodb": "~1.0",
+    "mongodb/mongodb": "^1.0",
     "nilportugues/repository": "^2.0",
+    "nilportugues/serializer": "^1.1",
     "nilportugues/assert": "^1.0"
   },
   "require-dev": {
@@ -28,7 +29,7 @@
   },
   "autoload-dev": {
     "psr-4": {
-      "NilPortugues\\Tests\\Foundation\\Infrastructure\\Model\\Repository\\MongoDB\\": "tests/"
+      "NilPortugues\\Tests\\Foundation\\": "tests/"
     }
   }
 }
