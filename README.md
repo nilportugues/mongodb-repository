@@ -57,7 +57,7 @@ The fully implementation should be along the lines:
 
 ```php
 <?php
-use NilPortugues\Foundation\Infrastructure\Model\Repository\Mongodb\MongoDBRepository;
+use NilPortugues\Foundation\Infrastructure\Model\Repository\MongoDB\MongoDBRepository;
 
 class UserRepository extends MongoDBRepository 
 {
@@ -139,7 +139,7 @@ While the amount of core is less than the previous example, bare in mind that yo
 
 ```php
 <?php
-use NilPortugues\Foundation\Infrastructure\Model\Repository\Mongodb\MongoDBRepository;
+use NilPortugues\Foundation\Infrastructure\Model\Repository\MongoDB\MongoDBRepository;
 
 class UserRepository extends MongoDBRepository 
 {
