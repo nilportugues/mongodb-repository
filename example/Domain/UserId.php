@@ -2,25 +2,25 @@
 
 /**
  * Author: Nil Portugués Calderó <contact@nilportugues.com>
- * Date: 16/02/16
- * Time: 0:07.
+ * Date: 7/02/16
+ * Time: 18:12.
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-namespace NilPortugues\Foundation\Infrastructure\Model\Repository\MongoDB;
+namespace NilPortugues\Example\Domain;
 
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Identity;
 
 /**
- * Class EntityId.
+ * Class UserId.
  */
-class EntityId implements Identity
+class UserId implements Identity
 {
     private $id;
 
     /**
-     * EntityId constructor.
+     * UserId constructor.
      *
      * @param $id
      */
@@ -42,6 +42,6 @@ class EntityId implements Identity
      */
     public function __toString()
     {
-        return (string) $this->id;
+        return (string) $this->id();
     }
 }

@@ -78,9 +78,9 @@ class UserRepository extends MongoDBRepository
      */    
     public function find(Identity $id, Fields $fields = null)
     {
-        $mongoDBModel = parent::find($id, $fields);   
+        $model = parent::find($id, $fields);   
         
-        return $this->userAdapter->fromMongoDB($mongoDBModel);
+        return $this->userAdapter->fromMongoDB($model);
     }
     
     /**
@@ -88,9 +88,9 @@ class UserRepository extends MongoDBRepository
      */    
     public function findBy(Filter $filter = null, Sort $sort = null, Fields $fields = null)
     {
-        $mongoDBModelArray = parent::findBy($filter, $sort, $fields);   
+        $modelArray = parent::findBy($filter, $sort, $fields);   
         
-        return $this->fromMongoDBArray($mongoDBModelArray);
+        return $this->fromMongoDBArray($modelArray);
     }       
     
     /**
@@ -112,14 +112,14 @@ class UserRepository extends MongoDBRepository
     } 
 
    /**
-    * @param array $mongoDBModelArray
+    * @param array $modelArray
     * @return array
     */
-   protected function fromMongoDBArray(array $mongoDBModelArray)
+   protected function fromMongoDBArray(array $modelArray)
    {
         $results = [];
-        foreach ($mongoDBModelArray as $mongoDBModel) {            
-            $results[] = $this->userAdapter->fromMongoDB($mongoDBModel);
+        foreach ($modelArray as $model) {            
+            $results[] = $this->userAdapter->fromMongoDB($model);
         }
         
         return $results;

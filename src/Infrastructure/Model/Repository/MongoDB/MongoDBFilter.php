@@ -25,12 +25,12 @@ class MongoDBFilter
     const CONTAINS_PATTERN = '/%s/i.test(this.%s)';
     const STARTS_WITH_PATTERN = '/^%s/i.test(this.%s)';
     const ENDS_WITH_PATTERN = '/%s$/i.test(this.%s)';
-    const EQUALS_PATTERN = '/%s/i.test(this.%s)';
+    const EQUALS_PATTERN = '/^%s$/i.test(this.%s)';
 
     const NOT_CONTAINS_PATTERN = '/^((?!%s.))/i.test(this.%s)';
     const NOT_STARTS_WITH_PATTERN = '/^(?!%s).+/i.test(this.%s)';
     const NOT_ENDS_WITH_PATTERN = '!(/%s$/i.test(this.%s))';
-    const NOT_EQUALS_PATTERN = '!(/%s$/i.test(this.%s))';
+    const NOT_EQUALS_PATTERN = '!(/^%s$/i.test(this.%s))';
     const NOT_RANGES_REGEX = '%s < this.%s && %s > this.%s ';
 
     /**
@@ -135,18 +135,20 @@ class MongoDBFilter
                             case BaseFilter::RANGES:
                                 if ('$not' === $conditional) {
                                     $where[] = self::writeNotRangesRegex($key, $value);
-                                } else {
-                                    $filterArray[$key]['$gte'] = $value[0][0];
-                                    $filterArray[$key]['$lte'] = $value[0][1];
+                                    break;
                                 }
+                                $filterArray[$key]['$gte'] = $value[0][0];
+                                $filterArray[$key]['$lte'] = $value[0][1];
+
                                 break;
                             case BaseFilter::NOT_RANGES:
                                 if ('$not' === $conditional) {
                                     $filterArray[$key]['$gte'] = $value[0][0];
                                     $filterArray[$key]['$lte'] = $value[0][1];
-                                } else {
-                                    $where[] = self::writeNotRangesRegex($key, $value);
+                                    break;
                                 }
+                                $where[] = self::writeNotRangesRegex($key, $value);
+
                                 break;
                         }
                     } else {

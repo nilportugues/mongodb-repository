@@ -81,25 +81,21 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
     }
 
     /**
-     * Returns all instances of the type.
+     * Returns the total amount of elements in the repository given the restrictions provided by the Filter object.
      *
      * @param Filter|null $filter
-     * @param Sort|null   $sort
-     * @param Fields|null $fields
      *
-     * @return array
+     * @return int
      */
-    public function findBy(Filter $filter = null, Sort $sort = null, Fields $fields = null)
+    public function count(Filter $filter = null)
     {
-        $collection = $this->getCollection();
         $options = $this->options;
+        $collection = $this->getCollection();
+
         $filterArray = [];
-
         $this->applyFiltering($filter, $filterArray);
-        $this->applySorting($sort, $options);
-        $this->fetchSpecificFields($fields, $options);
 
-        return $collection->find($filterArray, $options)->toArray();
+        return $collection->count($filterArray, $options);
     }
 
     /**
@@ -126,50 +122,6 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
     }
 
     /**
-     * @param Sort  $sort
-     * @param array $options
-     */
-    protected function applySorting(Sort $sort = null, array &$options)
-    {
-        if (null !== $sort) {
-            MongoDBSorter::sort($options, $sort);
-        }
-    }
-
-    /**
-     * @param Fields $fields
-     * @param array  $options
-     */
-    protected function fetchSpecificFields(Fields $fields = null, array &$options)
-    {
-        if (null !== $fields) {
-            $fields = $fields->get();
-            $options[self::MONGODB_PROJECTION] = array_combine(
-                $fields,
-                array_fill(0, count($fields), 1)
-            );
-        }
-    }
-
-    /**
-     * Returns the total amount of elements in the repository given the restrictions provided by the Filter object.
-     *
-     * @param Filter|null $filter
-     *
-     * @return int
-     */
-    public function count(Filter $filter = null)
-    {
-        $options = $this->options;
-        $collection = $this->getCollection();
-
-        $filterArray = [];
-        $this->applyFiltering($filter, $filterArray);
-
-        return $collection->count($filterArray, $options);
-    }
-
-    /**
      * Returns whether an entity with the given id exists.
      *
      * @param $id
@@ -178,26 +130,10 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
      */
     public function exists(Identity $id)
     {
-        return !empty($this->find($id));
-    }
-
-    /**
-     * Retrieves an entity by its id.
-     *
-     * @param Identity    $id
-     * @param Fields|null $fields
-     *
-     * @return array
-     */
-    public function find(Identity $id, Fields $fields = null)
-    {
         $options = $this->options;
-        $this->fetchSpecificFields($fields, $options);
-
-        /** @var BSONDocument $result */
         $result = $this->getCollection()->findOne($this->applyIdFiltering($id), $options);
 
-        return (!empty($result)) ? $result->getArrayCopy() : [];
+        return (!empty($result)) ? true : false;
     }
 
     /**
@@ -217,6 +153,60 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
     }
 
     /**
+     * Retrieves an entity by its id.
+     *
+     * @param Identity    $id
+     * @param Fields|null $fields
+     *
+     * @return array
+     */
+    public function find(Identity $id, Fields $fields = null)
+    {
+        $options = $this->options;
+        $this->fetchSpecificFields($fields, $options);
+
+        /** @var BSONDocument $result */
+        $result = $this->getCollection()->findOne($this->applyIdFiltering($id), $options);
+
+        return (!empty($result)) ? $this->recursiveArrayCopy($result) : [];
+    }
+
+    /**
+     * @param Fields $fields
+     * @param array  $options
+     */
+    protected function fetchSpecificFields(Fields $fields = null, array &$options)
+    {
+        if (null !== $fields) {
+            $fields = $fields->get();
+            $options[self::MONGODB_PROJECTION] = array_combine(
+                $fields,
+                array_fill(0, count($fields), 1)
+            );
+        }
+    }
+
+    /**
+     * @param $data
+     *
+     * @return array
+     */
+    protected function recursiveArrayCopy($data)
+    {
+        if ($data instanceof BSONDocument) {
+            $data = $data->getArrayCopy();
+        }
+
+        if (\is_array($data)) {
+            foreach ($data as &$value) {
+                $value = $this->recursiveArrayCopy($value);
+            }
+        }
+
+        return $data;
+    }
+
+    /**
      * Adds a new entity to the storage.
      *
      * @param Identity $value
@@ -231,7 +221,7 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
 
         /** @var \MongoDB\Model\BSONDocument $result */
         $result = $this->getCollection()->findOne(new EntityId($id), $options);
-        $result = (null !== $result) ? $result->getArrayCopy() : [];
+        $result = (null !== $result) ? $this->recursiveArrayCopy($result) : [];
 
         return $result;
     }
@@ -264,6 +254,44 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
         $filter->must()->includeGroup('_id', $stringIds);
 
         return $this->findBy($filter);
+    }
+
+    /**
+     * Returns all instances of the type.
+     *
+     * @param Filter|null $filter
+     * @param Sort|null   $sort
+     * @param Fields|null $fields
+     *
+     * @return array
+     */
+    public function findBy(Filter $filter = null, Sort $sort = null, Fields $fields = null)
+    {
+        $collection = $this->getCollection();
+        $options = $this->options;
+        $filterArray = [];
+
+        $this->applyFiltering($filter, $filterArray);
+        $this->applySorting($sort, $options);
+        $this->fetchSpecificFields($fields, $options);
+
+        $result = $collection->find($filterArray, $options)->toArray();
+        foreach ($result as &$r) {
+            $r = $this->recursiveArrayCopy($r);
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param Sort  $sort
+     * @param array $options
+     */
+    protected function applySorting(Sort $sort = null, array &$options)
+    {
+        if (null !== $sort) {
+            MongoDBSorter::sort($options, $sort);
+        }
     }
 
     /**
@@ -334,6 +362,31 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
             );
         }
 
-        return new ResultPage($collection->find([], $options)->toArray(), $collection->count([], $options), 1, 1);
+        $bsonDocumentArray = $collection->find([], $options);
+
+        return new ResultPage(
+            $this->bsonDocumentArrayToNativeArray($bsonDocumentArray->toArray()),
+            $collection->count([], $options),
+            1,
+            1
+        );
+    }
+
+    /**
+     * @param BSONDocument[] $bsonDocumentArray
+     *
+     * @return array
+     */
+    protected function bsonDocumentArrayToNativeArray($bsonDocumentArray)
+    {
+        $resultArray = [];
+
+        /** @var BSONDocument[] $bsonDocumentArray */
+        foreach ($bsonDocumentArray as $bsonDocument) {
+            $bsonDocument = $bsonDocument->getArrayCopy();
+            $resultArray[] = $this->recursiveArrayCopy($bsonDocument);
+        }
+
+        return $resultArray;
     }
 }
