@@ -1,4 +1,7 @@
-# [WIP] MongoDB Repository
+# MongoDB Repository
+
+[![Build Status](https://travis-ci.org/nilportugues/php-mongodb-repository.svg)](https://travis-ci.org/nilportugues/php-mongodb-repository) [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/nilportugues/php-mongodb-repository/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/nilportugues/php-mongodb-repository/?branch=master) [![SensioLabsInsight](https://insight.sensiolabs.com/projects/d993addb-38ad-4847-bd42-fa35fcfa0390/mini.png?gold)](https://insight.sensiolabs.com/projects/d993addb-38ad-4847-bd42-fa35fcfa0390) [![Latest Stable Version](https://poser.pugx.org/nilportugues/mongodb-repository/v/stable?)](https://packagist.org/packages/nilportugues/mongodb-repository) [![Total Downloads](https://poser.pugx.org/nilportugues/mongodb-repository/downloads?)](https://packagist.org/packages/nilportugues/mongodb-repository) [![License](https://poser.pugx.org/nilportugues/mongodb-repository/license?)](https://packagist.org/packages/nilportugues/mongodb-repository)
+
 
 MongoDB Repository using *[nilportugues/repository](https://github.com/nilportugues/php-repository)* as foundation using *[mongodb/mongodb](https://github.com/mongodb/mongo-php-library)*.
 
@@ -10,20 +13,27 @@ Use [Composer](https://getcomposer.org) to install the package:
 $ composer require nilportugues/mongodb-repository
 ```
 
-## Why?
+## Why? Drivers and Multiple Implementations!
 
 Using this implementation you can switch it out to test your code without setting up databases.
-
-**Drivers:**
-
-- `composer require nilportugues/repository` for an InMemoryRepository implementation.
-- `composer require nilportugues/filesystem-repository` for a FileSystemRepository.
-- `composer require nilportugues/eloquent-repository` for an Eloquent implementation if you change or mind.
-- `composer require nilportugues/doctrine-repository` for an Doctrine implementation if you change or mind.
 
 Doesn't sound handy? Let's think of yet another use case you'll love using this. `Functional tests` and `Unitary tests`.
 
 No database connection will be needed, nor fakes. Using an `InMemoryRepository` or `FileSystemRepository` implementation will make those a breeze to code. And once the tests finish, all data may be destroyed with no worries at all.
+
+**Available drivers:**
+
+Also, if you feel like changing the repository implementation, no logic changes would be needed, as there are a set of drivers for you to use out of the box:
+
+- `composer require nilportugues/repository-cache` for [caching](https://github.com/nilportugues/php-repository-cache).
+- `composer require nilportugues/repository` for an [InMemoryRepository implementation](https://github.com/nilportugues/php-repository).
+- `composer require nilportugues/filesystem-repository` for a [FileSystemRepository implementation](https://github.com/nilportugues/php-filesystem-repository).
+- `composer require nilportugues/eloquent-repository` for a [SQL Eloquent implementation](https://github.com/nilportugues/php-eloquent-repository).
+- `composer require nilportugues/doctrine-repository` for a [SQL Doctrine implementation](https://github.com/nilportugues/php-doctrine-repository).
+- `composer require nilportugues/eloquent-mongodb-repository` for a [MongoDB Eloquent implementation](https://github.com/nilportugues/php-eloquent-mongodb-repository).
+
+
+
 
 ## Usage
 
