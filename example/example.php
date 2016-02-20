@@ -17,7 +17,7 @@ include_once '../vendor/autoload.php';
 $client = new \MongoDB\Client();
 
 //-------------------------------------------------------------------------------------------------------------
-// - Create dummy data for the same of the example.
+// - Create dummy data
 //-------------------------------------------------------------------------------------------------------------
 
 $models[] = new User(new UserId(1), 'Admin User', new DateTimeImmutable('2016-02-18'));
