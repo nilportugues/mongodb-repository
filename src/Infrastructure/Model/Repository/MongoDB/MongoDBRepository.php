@@ -289,7 +289,7 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
         $options = $this->options;
         $collection = $this->getCollection();
 
-        if (null == $filter) {
+        if (null === $filter) {
             $collection->drop($options);
 
             return;
