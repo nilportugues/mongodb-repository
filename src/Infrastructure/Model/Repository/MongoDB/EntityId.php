@@ -21,7 +21,7 @@ class EntityId implements Identity
     private $id;
 
     /**
-     * ObjectId constructor.
+     * EntityId constructor.
      *
      * @param $id
      */
