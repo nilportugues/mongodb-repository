@@ -21,6 +21,7 @@ addons:
 
 before_script:
   - pecl install mongodb
+  - travis_retry composer clearcache
   - travis_retry composer self-update
   - travis_retry composer install --no-interaction
 
