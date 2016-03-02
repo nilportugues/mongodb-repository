@@ -229,7 +229,7 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
      *
      * @return array
      */
-    private function updateOne(Identity $value)
+    protected function updateOne(Identity $value)
     {
         $value = MongoDBTransformer::create()->serialize($value);
         $id = (self::MONGODB_OBJECT_ID === $this->primaryKey) ? new ObjectID($value[self::MONGODB_OBJECT_ID]) : $value[$this->primaryKey];
