@@ -291,7 +291,7 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
         $insertedIds = $result->getInsertedIds();
         $updatedIds = $result->getUpsertedIds();
 
-        if (0 === count($updatedIds)) {
+        if (0 === count($updatedIds) && 0 !== count($mayRequireInsert)) {
             $result = $this->getCollection()->bulkWrite($mayRequireInsert, $options);
             $updatedIds = $result->getInsertedIds();
         }
@@ -445,6 +445,11 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
         return $resultArray;
     }
 
+    /**
+     * @param array $store
+     *
+     * @return \MongoDB\InsertManyResult
+     */
     protected function addMany(array &$store)
     {
         /* @var \MongoDB\InsertManyResult $result */
