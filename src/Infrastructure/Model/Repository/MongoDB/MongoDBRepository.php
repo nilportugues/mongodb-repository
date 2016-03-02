@@ -17,7 +17,6 @@ use MongoDB\Model\BSONDocument;
 use NilPortugues\Assert\Assert;
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Fields;
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Filter;
-use NilPortugues\Foundation\Domain\Model\Repository\Filter as DomainFilter;
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Identity;
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Page;
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Pageable;
@@ -25,6 +24,7 @@ use NilPortugues\Foundation\Domain\Model\Repository\Contracts\PageRepository;
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\ReadRepository;
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Sort;
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\WriteRepository;
+use NilPortugues\Foundation\Domain\Model\Repository\Filter as DomainFilter;
 use NilPortugues\Foundation\Domain\Model\Repository\Page as ResultPage;
 
 /**
@@ -122,37 +122,6 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
     }
 
     /**
-     * Returns whether an entity with the given id exists.
-     *
-     * @param $id
-     *
-     * @return bool
-     */
-    public function exists(Identity $id)
-    {
-        $options = $this->options;
-        $result = $this->getCollection()->findOne($this->applyIdFiltering($id), $options);
-
-        return (!empty($result)) ? true : false;
-    }
-
-    /**
-     * @param Identity $id
-     *
-     * @return array
-     */
-    protected function applyIdFiltering(Identity $id)
-    {
-        try {
-            $filter = [self::MONGODB_OBJECT_ID => new ObjectID($id->id())];
-        } catch (InvalidArgumentException $e) {
-            $filter = [$this->primaryKey => $id->id()];
-        }
-
-        return $filter;
-    }
-
-    /**
      * Retrieves an entity by its id.
      *
      * @param Identity    $id
@@ -187,6 +156,22 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
     }
 
     /**
+     * @param Identity $id
+     *
+     * @return array
+     */
+    protected function applyIdFiltering(Identity $id)
+    {
+        try {
+            $filter = [self::MONGODB_OBJECT_ID => new ObjectID($id->id())];
+        } catch (InvalidArgumentException $e) {
+            $filter = [$this->primaryKey => $id->id()];
+        }
+
+        return $filter;
+    }
+
+    /**
      * @param $data
      *
      * @return array
@@ -215,15 +200,63 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
      */
     public function add(Identity $value)
     {
+        if ($this->exists($value)) {
+            return $this->updateOne($value);
+        }
+
+        return $this->addOne($value);
+    }
+
+    /**
+     * Returns whether an entity with the given id exists.
+     *
+     * @param $id
+     *
+     * @return bool
+     */
+    public function exists(Identity $id)
+    {
+        $options = $this->options;
+        $result = $this->getCollection()->findOne($this->applyIdFiltering($id), $options);
+
+        return (!empty($result)) ? true : false;
+    }
+
+    /**
+     * @param Identity $value
+     *
+     * @return array
+     */
+    private function updateOne(Identity $value)
+    {
+        $value = MongoDBTransformer::create()->serialize($value);
+        $id = (self::MONGODB_OBJECT_ID === $this->primaryKey) ? new ObjectID($value['_id']) : $value[$this->primaryKey];
+        unset($value[$this->primaryKey]);
+
+        $result = $this->getCollection()->findOneAndUpdate(
+            [$this->primaryKey => $id],
+            ['$set' => $value],
+            $this->options
+        );
+
+        return (null !== $result) ? $this->recursiveArrayCopy($result) : [];
+    }
+
+    /**
+     * @param Identity $value
+     *
+     * @return array
+     */
+    protected function addOne(Identity $value)
+    {
         $options = $this->options;
         $value = MongoDBTransformer::create()->serialize($value);
         $id = $this->getCollection()->insertOne($value, $this->options)->getInsertedId();
 
         /** @var \MongoDB\Model\BSONDocument $result */
         $result = $this->getCollection()->findOne(new EntityId($id), $options);
-        $result = (null !== $result) ? $this->recursiveArrayCopy($result) : [];
 
-        return $result;
+        return (null !== $result) ? $this->recursiveArrayCopy($result) : [];
     }
 
     /**

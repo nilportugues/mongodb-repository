@@ -54,6 +54,17 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
         $this->repository->removeAll();
     }
 
+
+    public function testICanUpdateAnExistingClient()
+    {
+        $client1 = new Clients(1, 'Homer Simpson', (new DateTime('2014-12-11')), 3, 25.125);
+        $this->repository->add($client1);
+
+        $client1 = $this->repository->find(new ClientId(1));
+
+        $this->assertEquals('Homer Simpson', $client1['name']);
+    }
+
     /**
      *
      */
@@ -118,6 +129,8 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
     {
         $this->assertTrue($this->repository->exists(new ClientId(1)));
     }
+
+
 
     /**
      *
