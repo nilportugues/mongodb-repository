@@ -55,14 +55,29 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
     }
 
 
-    public function testICanUpdateAnExistingClient()
+    public function testItCanUpdateAnExistingClient()
     {
         $client1 = new Clients(1, 'Homer Simpson', (new DateTime('2014-12-11')), 3, 25.125);
-        $this->repository->add($client1);
+        $client1 = $this->repository->add($client1);
+        $this->assertEquals('Homer Simpson', $client1['name']);
 
         $client1 = $this->repository->find(new ClientId(1));
-
         $this->assertEquals('Homer Simpson', $client1['name']);
+    }
+
+    public function testItCanUpdateAllClientsName()
+    {
+        $client1 = new Clients(1, 'Homer Simpson', (new DateTime('2014-12-11')), 3, 25.125);
+        $client2 = new Clients(2, 'Homer Simpson', (new DateTime('2013-02-22')), 3, 50978.125);
+        $client3 = new Clients(3, 'Homer Simpson', (new DateTime('2010-12-01')), 5, 47889850.125);
+        $client4 = new Clients(4, 'Homer Simpson', (new DateTime('2010-12-10')), 4, 69158.687);
+
+        $this->repository->addAll([$client1, $client2, $client3, $client4]);
+
+        for($i=1; $i<=4; $i++) {
+            $client = $this->repository->find(new ClientId($i));
+            $this->assertEquals('Homer Simpson', $client['name']);
+        }
     }
 
     /**

@@ -14,6 +14,8 @@ use MongoDB\BSON\ObjectID;
 use MongoDB\Client;
 use MongoDB\Driver\Exception\InvalidArgumentException;
 use MongoDB\Model\BSONDocument;
+use MongoDB\Operation\BulkWrite;
+use MongoDB\Operation\FindOneAndUpdate;
 use NilPortugues\Assert\Assert;
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Fields;
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Filter;
@@ -230,16 +232,16 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
     private function updateOne(Identity $value)
     {
         $value = MongoDBTransformer::create()->serialize($value);
-        $id = (self::MONGODB_OBJECT_ID === $this->primaryKey) ? new ObjectID($value['_id']) : $value[$this->primaryKey];
+        $id = (self::MONGODB_OBJECT_ID === $this->primaryKey) ? new ObjectID($value[self::MONGODB_OBJECT_ID]) : $value[$this->primaryKey];
         unset($value[$this->primaryKey]);
 
         $result = $this->getCollection()->findOneAndUpdate(
             [$this->primaryKey => $id],
             ['$set' => $value],
-            $this->options
+            array_merge($this->options, ['returnDocument' => FindOneAndUpdate::RETURN_DOCUMENT_AFTER])
         );
 
-        return (null !== $result) ? $this->recursiveArrayCopy($result) : [];
+        return (null !== $result) ? $this->recursiveArrayCopy((array) $result) : [];
     }
 
     /**
@@ -249,12 +251,11 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
      */
     protected function addOne(Identity $value)
     {
-        $options = $this->options;
         $value = MongoDBTransformer::create()->serialize($value);
         $id = $this->getCollection()->insertOne($value, $this->options)->getInsertedId();
 
         /** @var \MongoDB\Model\BSONDocument $result */
-        $result = $this->getCollection()->findOne(new EntityId($id), $options);
+        $result = $this->getCollection()->findOne(new EntityId($id), $this->options);
 
         return (null !== $result) ? $this->recursiveArrayCopy($result) : [];
     }
@@ -268,25 +269,45 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
      */
     public function addAll(array $values)
     {
-        $store = [];
-        foreach ($values as &$value) {
+        $documents = [];
+        $mayRequireInsert = [];
+        $options = array_merge($this->options, ['upsert' => true, 'ordered' => false]);
+
+        foreach ($values as $value) {
             Assert::isInstanceOf($value, Identity::class);
-            $store[] = MongoDBTransformer::create()->serialize($value);
+            $value = MongoDBTransformer::create()->serialize($value);
+            $id = (self::MONGODB_OBJECT_ID === $this->primaryKey) ? new ObjectID($value[self::MONGODB_OBJECT_ID]) : $value[$this->primaryKey];
+
+            if (null === $id) {
+                $documents[][BulkWrite::INSERT_ONE] = [$value];
+            } else {
+                $mayRequireInsert[][BulkWrite::INSERT_ONE] = [$value];
+                unset($value[$this->primaryKey]);
+                $documents[][BulkWrite::UPDATE_ONE] = [[$this->primaryKey => $id], ['$set' => $value]];
+            }
         }
 
-        /** @var \MongoDB\InsertManyResult $result */
-        $result = $this->getCollection()->insertMany($store, $this->options);
+        $result = $this->getCollection()->bulkWrite($documents, $options);
+        $insertedIds = $result->getInsertedIds();
+        $updatedIds = $result->getUpsertedIds();
+
+        if (0 === count($updatedIds)) {
+            $result = $this->getCollection()->bulkWrite($mayRequireInsert, $options);
+            $updatedIds = $result->getInsertedIds();
+        }
+        unset($mayRequireInsert);
 
         $stringIds = [];
-        $ids = $result->getInsertedIds();
+        $ids = array_merge($updatedIds, $insertedIds);
+
         foreach ($ids as $id) {
             $stringIds[] = (string) $id;
         }
 
-        $filter = new DomainFilter();
-        $filter->must()->includeGroup('_id', $stringIds);
+        $updateFilter = new DomainFilter();
+        $updateFilter->must()->includeGroup(self::MONGODB_OBJECT_ID, $stringIds);
 
-        return $this->findBy($filter);
+        return $this->findBy($updateFilter);
     }
 
     /**
@@ -309,6 +330,7 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
         $this->fetchSpecificFields($fields, $options);
 
         $result = $collection->find($filterArray, $options)->toArray();
+
         foreach ($result as &$r) {
             $r = $this->recursiveArrayCopy($r);
         }
@@ -421,5 +443,11 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
         }
 
         return $resultArray;
+    }
+
+    protected function addMany(array &$store)
+    {
+        /* @var \MongoDB\InsertManyResult $result */
+        return $this->getCollection()->insertMany($store, $this->options);
     }
 }
