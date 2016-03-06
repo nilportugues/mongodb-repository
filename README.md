@@ -1,7 +1,7 @@
 # MongoDB Repository
 
 [![Build Status](https://travis-ci.org/PHPRepository/php-mongodb-repository.svg)](https://travis-ci.org/PHPRepository/php-mongodb-repository) [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/nilportugues/php-mongodb-repository/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/nilportugues/php-mongodb-repository/?branch=master) [![SensioLabsInsight](https://insight.sensiolabs.com/projects/b6284e28-ca76-4836-b120-2341b168a7db/mini.png?gold)](https://insight.sensiolabs.com/projects/b6284e28-ca76-4836-b120-2341b168a7db) [![Latest Stable Version](https://poser.pugx.org/nilportugues/mongodb-repository/v/stable?)](https://packagist.org/packages/nilportugues/mongodb-repository) [![Total Downloads](https://poser.pugx.org/nilportugues/mongodb-repository/downloads?)](https://packagist.org/packages/nilportugues/mongodb-repository) [![License](https://poser.pugx.org/nilportugues/mongodb-repository/license?)](https://packagist.org/packages/nilportugues/mongodb-repository)
-
+[![Donate](https://www.paypalobjects.com/en_US/i/btn/btn_donate_SM.gif)](https://paypal.me/nilportugues)
 
 MongoDB Repository using *[nilportugues/repository](https://github.com/nilportugues/php-repository)* as foundation using *[mongodb/mongodb](https://github.com/mongodb/mongo-php-library)*.
 
