@@ -400,7 +400,6 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
             $filterArray = [];
             $this->applyFiltering($pageable->filters(), $filterArray);
             $this->applySorting($pageable->sortings(), $options);
-            $this->fetchSpecificFields($pageable->fields(), $options);
 
             $total = $collection->count($filterArray, $options);
             $page = $pageable->pageNumber() - 1;
@@ -409,12 +408,18 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
             $options['limit'] = $pageable->pageSize();
             $options['skip'] = $pageable->pageSize() * ($page);
 
-            return new ResultPage(
-                $collection->find($filterArray, $options)->toArray(),
-                $total,
-                $pageable->pageNumber(),
-                ceil($total / $pageable->pageSize())
-            );
+            $distinct = $pageable->distinctFields()->get();
+            if (count($distinct) > 0) {
+                if (count($distinct) > 1) {
+                    throw new \Exception('Mongo cannot select more than one field when calling distinct.');
+                }
+                $results = (array) $collection->distinct(array_shift($distinct), $filterArray, $this->options);
+            } else {
+                $this->fetchSpecificFields($pageable->fields(), $options);
+                $results = $collection->find($filterArray, $options)->toArray();
+            }
+
+            return new ResultPage($results, $total, $pageable->pageNumber(), ceil($total / $pageable->pageSize()));
         }
 
         $bsonDocumentArray = $collection->find([], $options);
@@ -454,5 +459,57 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
     {
         /* @var \MongoDB\InsertManyResult $result */
         return $this->getCollection()->insertMany($store, $this->options);
+    }
+
+    /**
+     * Returns all instances of the type meeting $distinctFields values.
+     *
+     * @param Fields      $distinctFields
+     * @param Filter|null $filter
+     * @param Sort|null   $sort
+     *
+     * @return array
+     *
+     * @throws \Exception
+     */
+    public function findByDistinct(Fields $distinctFields, Filter $filter = null, Sort $sort = null)
+    {
+        $collection = $this->getCollection();
+        $options = $this->options;
+        $filterArray = [];
+
+        $this->applyFiltering($filter, $filterArray);
+        $this->applySorting($sort, $options);
+
+        $fields = $distinctFields->get();
+
+        if (count($fields) > 1) {
+            throw new \Exception('Mongo cannot select more than one field when calling distinct.');
+        }
+
+        $results = (array) $collection->distinct(array_shift($fields), $filterArray, $this->options);
+
+        foreach ($results as &$r) {
+            $r = $this->recursiveArrayCopy($r);
+        }
+
+        return $results;
+    }
+
+    /**
+     * Repository data is added or removed as a whole block.
+     * Must work or fail and rollback any persisted/erased data.
+     *
+     * @param callable $transaction
+     *
+     * @throws \Exception
+     */
+    public function transactional(callable $transaction)
+    {
+        try {
+            $transaction();
+        } catch (\Exception $e) {
+            throw $e;
+        }
     }
 }

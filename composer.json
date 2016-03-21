@@ -13,7 +13,7 @@
   ],
   "require": {
     "mongodb/mongodb": "^1.0",
-    "nilportugues/repository": "2.0.*",
+    "nilportugues/repository": "2.2.*",
     "nilportugues/serializer": "1.1.*",
     "nilportugues/assert": "1.0.*"
   },

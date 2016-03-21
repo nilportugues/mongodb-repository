@@ -54,6 +54,104 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
         $this->repository->removeAll();
     }
 
+    public function testFindByDistinct()
+    {
+        $distinctFields = new Fields(['name']);
+        $clients = new Clients(
+            5,
+            'John Doe',
+            new DateTime('2014-12-11'),
+            3,
+            [
+                new DateTime('2014-12-16'),
+                new DateTime('2014-12-31'),
+                new DateTime('2015-03-11'),
+            ],
+            25.125
+        );
+
+        $this->repository->add($clients);
+        $results = $this->repository->findByDistinct($distinctFields);
+
+        $this->assertEquals(4, count($results));
+    }
+
+    public function testFindAllWithDistinct()
+    {
+        $clients = new Clients(
+            5,
+            'John Doe',
+            new DateTime('2014-12-11'),
+            3,
+            [
+                new DateTime('2014-12-16'),
+                new DateTime('2014-12-31'),
+                new DateTime('2015-03-11'),
+            ],
+            25.125
+        );
+
+        $this->repository->add($clients);
+
+        $pageable = new Pageable(
+            1,
+            10,
+            null,
+            null,
+            null,
+            new Fields(['name'])
+        );
+
+        $result = $this->repository->findAll($pageable);
+        $this->assertEquals(4, count($result->content()));
+    }
+
+    public function testTransactional()
+    {
+        $clients = new Clients(
+            5,
+            'John Doe',
+            new DateTime('2014-12-11'),
+            3,
+            [
+                new DateTime('2014-12-16'),
+                new DateTime('2014-12-31'),
+                new DateTime('2015-03-11'),
+            ],
+            25.125
+        );
+
+        $transaction = function () use ($clients) {
+            $this->repository->add($clients);
+        };
+
+        $this->repository->transactional($transaction);
+
+        $this->assertEquals(5, $this->repository->count());
+    }
+
+    public function testTransactionalFailsAndDoesNotGetAdded()
+    {
+        $clients = new Clients(
+            5,
+            'John Doe',
+            new DateTime('2014-12-11'),
+            3,
+            [
+                new DateTime('2014-12-16'),
+                new DateTime('2014-12-31'),
+                new DateTime('2015-03-11'),
+            ],
+            25.125
+        );
+
+        $transaction = function () use ($clients) {
+            throw new \Exception('Just making it fail');
+        };
+
+        $this->setExpectedException(Exception::class);
+        $this->repository->transactional($transaction);
+    }
 
     public function testItCanUpdateAnExistingClient()
     {
@@ -74,7 +172,7 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
 
         $this->repository->addAll([$client1, $client2, $client3, $client4]);
 
-        for($i=1; $i<=4; $i++) {
+        for ($i = 1; $i <= 4; ++$i) {
             $client = $this->repository->find(new ClientId($i));
             $this->assertEquals('Homer Simpson', $client['name']);
         }
@@ -144,8 +242,6 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
     {
         $this->assertTrue($this->repository->exists(new ClientId(1)));
     }
-
-
 
     /**
      *
