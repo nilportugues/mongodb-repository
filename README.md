@@ -143,13 +143,12 @@ use NilPortugues\Foundation\Infrastructure\Model\Repository\MongoDB\MongoDBRepos
 
 class UserRepository extends MongoDBRepository 
 {
-    /**
-     * @param \MongoDB\Client $client
-     */
-    public function __construct($client)
-    {
-        parent::__construct($client, 'databaseName', 'collectionName');
-    }
+    
+}
+
+class BlogPostRepository extends MongoDBRepository 
+{
+    
 }
 ```
 
