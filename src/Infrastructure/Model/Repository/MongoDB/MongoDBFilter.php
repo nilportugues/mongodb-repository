@@ -162,6 +162,7 @@ class MongoDBFilter
                         }
                     }
                 }
+                $value = (array) $value;
                 $value = array_shift($value);
 
                 switch ($filterName) {
