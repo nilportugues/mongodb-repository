@@ -293,6 +293,10 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
                 $documents[][BulkWrite::UPDATE_ONE] = [[$this->primaryKey => $id], ['$set' => $value]];
             }
         }
+        
+        if (empty($documents)) {
+            return [];
+        }
 
         $result = $this->getCollection()->bulkWrite($documents, $options);
         $insertedIds = $result->getInsertedIds();
