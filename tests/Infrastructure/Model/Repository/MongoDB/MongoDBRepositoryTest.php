@@ -390,7 +390,6 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
         $filter->must()->notEqual('name', 'Ken Sugimori');
 
         $fields = new Fields(['name']);
-
         $results = $this->repository->findBy($filter, null, $fields);
 
         $this->assertEquals(3, count($results));

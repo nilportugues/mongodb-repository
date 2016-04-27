@@ -25,12 +25,10 @@ class MongoDBFilter
     const CONTAINS_PATTERN = '/%s/i.test(this.%s)';
     const STARTS_WITH_PATTERN = '/^%s/i.test(this.%s)';
     const ENDS_WITH_PATTERN = '/%s$/i.test(this.%s)';
-    const EQUALS_PATTERN = '/^%s$/i.test(this.%s)';
 
     const NOT_CONTAINS_PATTERN = '/^((?!%s.))/i.test(this.%s)';
     const NOT_STARTS_WITH_PATTERN = '/^(?!%s).+/i.test(this.%s)';
     const NOT_ENDS_WITH_PATTERN = '!(/%s$/i.test(this.%s))';
-    const NOT_EQUALS_PATTERN = '!(/^%s$/i.test(this.%s))';
     const NOT_RANGES_REGEX = '%s < this.%s && %s > this.%s ';
 
     /**
@@ -207,12 +205,18 @@ class MongoDBFilter
                         );
                         break;
                     case BaseFilter::EQUALS:
-                        $regex = ('$not' !== $conditional) ? self::EQUALS_PATTERN : self::NOT_EQUALS_PATTERN;
-                        $where[] = sprintf($regex, $value, $key);
+                        if ('$not' !== $conditional) {
+                            $filterArray[$key] = $value;
+                        } else {
+                            $filterArray[$key] = ['$ne' => $value];
+                        }
                         break;
                     case BaseFilter::NOT_EQUAL:
-                        $regex = ('$not' !== $conditional) ? self::NOT_EQUALS_PATTERN : self::EQUALS_PATTERN;
-                        $where[] = sprintf($regex, $value, $key);
+                        if ('$not' !== $conditional) {
+                            $filterArray[$key] = ['$ne' => $value];
+                        } else {
+                            $filterArray[$key] = $value;
+                        }
                         break;
                 }
             }

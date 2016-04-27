@@ -276,7 +276,7 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
         foreach ($values as $value) {
             Assert::isInstanceOf($value, Identity::class);
             $value = MongoDBTransformer::create()->serialize($value);
-            
+
             if (self::MONGODB_OBJECT_ID === $this->primaryKey) {
                 $id = new ObjectID(
                     (!empty($value[self::MONGODB_OBJECT_ID])) ? $value[self::MONGODB_OBJECT_ID] : null
@@ -293,7 +293,7 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
                 $documents[][BulkWrite::UPDATE_ONE] = [[$this->primaryKey => $id], ['$set' => $value]];
             }
         }
-        
+
         if (empty($documents)) {
             return [];
         }
