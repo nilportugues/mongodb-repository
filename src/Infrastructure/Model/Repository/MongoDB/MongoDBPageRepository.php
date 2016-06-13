@@ -33,8 +33,11 @@ class MongoDBPageRepository extends BaseMongoDBRepository implements PageReposit
             $page = $pageable->pageNumber() - 1;
             $page = ($page < 0) ? 1 : $page;
 
-            $options['limit'] = $pageable->pageSize();
-            $options['skip'] = $pageable->pageSize() * ($page);
+            $pageSize = $pageable->pageSize();
+            $pageSize = ($pageSize>0) ? $pageSize : 1;
+
+            $options['limit'] = $pageSize;
+            $options['skip'] = $pageSize * ($page);
 
             $distinct = $pageable->distinctFields()->get();
             if (count($distinct) > 0) {
@@ -47,7 +50,7 @@ class MongoDBPageRepository extends BaseMongoDBRepository implements PageReposit
                 $results = $collection->find($filterArray, $options)->toArray();
             }
 
-            return new ResultPage($results, $total, $pageable->pageNumber(), ceil($total / $pageable->pageSize()));
+            return new ResultPage($results, $total, $pageable->pageNumber(), ceil($total / $pageSize));
         }
 
         $bsonDocumentArray = $collection->find([], $options);
