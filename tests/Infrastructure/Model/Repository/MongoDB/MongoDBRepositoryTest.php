@@ -22,6 +22,7 @@ use NilPortugues\Foundation\Domain\Model\Repository\Sort;
 use NilPortugues\Tests\Foundation\Helpers\ClientId;
 use NilPortugues\Tests\Foundation\Helpers\Clients;
 use NilPortugues\Tests\Foundation\Helpers\ClientsRepository;
+use NilPortugues\Tests\Foundation\MongoDBCustomerMapping;
 
 class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
 {
@@ -36,12 +37,14 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
     public function setUp()
     {
         $client = new Client();
-        $this->repository = new ClientsRepository($client, 'example', 'users');
+        $mapping = new MongoDBCustomerMapping();
 
-        $client1 = new Clients(1, 'John Doe', (new DateTime('2014-12-11')), 3, 25.125);
-        $client2 = new Clients(2, 'Junichi Masuda', (new DateTime('2013-02-22')), 3, 50978.125);
-        $client3 = new Clients(3, 'Shigeru Miyamoto', (new DateTime('2010-12-01')), 5, 47889850.125);
-        $client4 = new Clients(4, 'Ken Sugimori', (new DateTime('2010-12-10')), 4, 69158.687);
+        $this->repository = new ClientsRepository($mapping, $client, 'example', 'users');
+
+        $client1 = new Clients(1, 'John Doe', new DateTime('2014-12-11'), 3, 25.125);
+        $client2 = new Clients(2, 'Junichi Masuda', new DateTime('2013-02-22'), 3, 50978.125);
+        $client3 = new Clients(3, 'Shigeru Miyamoto', new DateTime('2010-12-01'), 5, 47889850.125);
+        $client4 = new Clients(4, 'Ken Sugimori', new DateTime('2010-12-10'), 4, 69158.687);
 
         $this->repository->addAll([$client1, $client2, $client3, $client4]);
     }
@@ -54,21 +57,20 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
         $this->repository->removeAll();
     }
 
+    public function testItCanUpdateAnExistingClient()
+    {
+        $client1 = new Clients(1, 'Homer Simpson', new DateTime('2014-12-11'), 3, 25.125);
+        $client1 = $this->repository->add($client1);
+        $this->assertEquals('Homer Simpson', $client1->name());
+
+        $client1 = $this->repository->find(new ClientId(1));
+        $this->assertEquals('Homer Simpson', $client1->name());
+    }
+
     public function testFindByDistinct()
     {
         $distinctFields = new Fields(['name']);
-        $clients = new Clients(
-            5,
-            'John Doe',
-            new DateTime('2014-12-11'),
-            3,
-            [
-                new DateTime('2014-12-16'),
-                new DateTime('2014-12-31'),
-                new DateTime('2015-03-11'),
-            ],
-            25.125
-        );
+        $clients = new Clients(5, 'John Doe', new DateTime('2014-12-11'), 3, 25.125);
 
         $this->repository->add($clients);
         $results = $this->repository->findByDistinct($distinctFields);
@@ -78,18 +80,7 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
 
     public function testFindAllWithDistinct()
     {
-        $clients = new Clients(
-            5,
-            'John Doe',
-            new DateTime('2014-12-11'),
-            3,
-            [
-                new DateTime('2014-12-16'),
-                new DateTime('2014-12-31'),
-                new DateTime('2015-03-11'),
-            ],
-            25.125
-        );
+        $clients = new Clients(5, 'John Doe', new DateTime('2014-12-11'), 3, 25.125);
 
         $this->repository->add($clients);
 
@@ -113,11 +104,6 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
             'John Doe',
             new DateTime('2014-12-11'),
             3,
-            [
-                new DateTime('2014-12-16'),
-                new DateTime('2014-12-31'),
-                new DateTime('2015-03-11'),
-            ],
             25.125
         );
 
@@ -137,11 +123,6 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
             'John Doe',
             new DateTime('2014-12-11'),
             3,
-            [
-                new DateTime('2014-12-16'),
-                new DateTime('2014-12-31'),
-                new DateTime('2015-03-11'),
-            ],
             25.125
         );
 
@@ -153,46 +134,29 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
         $this->repository->transactional($transaction);
     }
 
-    public function testItCanUpdateAnExistingClient()
-    {
-        $client1 = new Clients(1, 'Homer Simpson', (new DateTime('2014-12-11')), 3, 25.125);
-        $client1 = $this->repository->add($client1);
-        $this->assertEquals('Homer Simpson', $client1['name']);
-
-        $client1 = $this->repository->find(new ClientId(1));
-        $this->assertEquals('Homer Simpson', $client1['name']);
-    }
-
     public function testItCanUpdateAllClientsName()
     {
         $client1 = new Clients(1, 'Homer Simpson', (new DateTime('2014-12-11')), 3, 25.125);
-        $client2 = new Clients(2, 'Homer Simpson', (new DateTime('2013-02-22')), 3, 50978.125);
-        $client3 = new Clients(3, 'Homer Simpson', (new DateTime('2010-12-01')), 5, 47889850.125);
-        $client4 = new Clients(4, 'Homer Simpson', (new DateTime('2010-12-10')), 4, 69158.687);
+        $client2 = new Clients(2, 'Homer Simpson', ('2013-02-22'), 3, 50978.125);
+        $client3 = new Clients(3, 'Homer Simpson', ('2010-12-01'), 5, 47889850.125);
+        $client4 = new Clients(4, 'Homer Simpson', ('2010-12-10'), 4, 69158.687);
 
         $this->repository->addAll([$client1, $client2, $client3, $client4]);
 
         for ($i = 1; $i <= 4; ++$i) {
             $client = $this->repository->find(new ClientId($i));
-            $this->assertEquals('Homer Simpson', $client['name']);
+            $this->assertEquals('Homer Simpson', $client->name());
         }
     }
 
-    /**
-     *
-     */
     public function testItCanFind()
     {
-        /* @var Clients $client */
         $id = new ClientId(1);
         $client = $this->repository->find($id);
 
-        $this->assertEquals(1, $client['id']);
+        $this->assertEquals(1, $client->id());
     }
 
-    /**
-     *
-     */
     public function testFindAll()
     {
         $result = $this->repository->findAll();
@@ -201,9 +165,6 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(4, count($result->content()));
     }
 
-    /**
-     *
-     */
     public function testFindAllWithPageable()
     {
         $filter = new Filter();
@@ -216,17 +177,11 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(2, count($result->content()));
     }
 
-    /**
-     *
-     */
     public function testCount()
     {
         $this->assertEquals(4, $this->repository->count());
     }
 
-    /**
-     *
-     */
     public function testCountWithFilter()
     {
         $filter = new Filter();
@@ -235,17 +190,11 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(1, $this->repository->count($filter));
     }
 
-    /**
-     *
-     */
     public function testExists()
     {
         $this->assertTrue($this->repository->exists(new ClientId(1)));
     }
 
-    /**
-     *
-     */
     public function testRemove()
     {
         $id = new ClientId(1);
@@ -254,9 +203,6 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
         $this->assertFalse($this->repository->exists($id));
     }
 
-    /**
-     *
-     */
     public function testRemoveAll()
     {
         $this->repository->removeAll();
@@ -264,9 +210,6 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
         $this->assertFalse($this->repository->exists(new ClientId(1)));
     }
 
-    /**
-     *
-     */
     public function testRemoveAllWithFilter()
     {
         $filter = new Filter();
@@ -277,9 +220,6 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
         $this->assertFalse($this->repository->exists(new ClientId(1)));
     }
 
-    /**
-     *
-     */
     public function testFindByWithEmptyRepository()
     {
         $this->repository->removeAll();
@@ -291,33 +231,24 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals([], $this->repository->findBy($filter, $sort));
     }
 
-    /**
-     *
-     */
     public function testAdd()
     {
-        $client = new Clients(5, 'Ken Sugimori', (new DateTime('2010-12-10')), 4, 69158.687);
+        $client = new Clients(5, 'Ken Sugimori', new DateTime('2010-12-10'), 4, 69158.687);
 
         $this->repository->add($client);
 
         $this->assertNotNull($this->repository->find(new ClientId(5)));
     }
 
-    /**
-     *
-     */
     public function testFindReturnsEmptyArrayIfNotFound()
     {
-        $this->assertEquals([], $this->repository->find(new ClientId(99999)));
+        $this->assertEmpty($this->repository->find(new ClientId(99999)));
     }
 
-    /**
-     *
-     */
     public function testAddAll()
     {
-        $client5 = new Clients(5, 'New Client 1', (new DateTime('2010-12-10')), 4, 69158.687);
-        $client6 = new Clients(6, 'New Client 2', (new DateTime('2010-12-10')), 4, 69158.687);
+        $client5 = new Clients(5, 'New Client 1', new DateTime('2010-12-10'), 4, 69158.687);
+        $client6 = new Clients(6, 'New Client 2', new DateTime('2010-12-10'), 4, 69158.687);
         $clients = [$client5, $client6];
 
         $this->repository->addAll($clients);
@@ -326,9 +257,6 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
         $this->assertNotNull($this->repository->find(new ClientId(6)));
     }
 
-    /**
-     *
-     */
     public function testAddAllRollbacks()
     {
         $this->setExpectedException(Exception::class);
@@ -336,19 +264,13 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
         $this->repository->addAll($clients);
     }
 
-    /**
-     *
-     */
     public function testFind()
     {
-        $expected = new Clients(4, 'Ken Sugimori', (new DateTime('2010-12-10')), 4, 69158.687);
+        $expected = new Clients(4, 'Ken Sugimori', new DateTime('2010-12-10'), 4, 69158.687);
 
-        $this->assertEquals($expected->id(), $this->repository->find(new ClientId(4))['id']);
+        $this->assertEquals($expected->id(), $this->repository->find(new ClientId(4))->id());
     }
 
-    /**
-     *
-     */
     public function testFindBy()
     {
         $sort = new Sort(['name'], new Order('ASC'));
@@ -363,176 +285,133 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
     //--------------------------------------------------------------------------------
     // MUST FILTER TESTS
     //--------------------------------------------------------------------------------
-    /**
-     *
-     */
+
+
     public function testFindByWithMustEqual()
     {
         $filter = new Filter();
         $filter->must()->equal('name', 'Ken Sugimori');
 
-        $fields = new Fields(['name']);
-        $results = $this->repository->findBy($filter, null, $fields);
+        $results = $this->repository->findBy($filter);
 
         $this->assertEquals(1, count($results));
 
         foreach ($results as $result) {
-            $this->assertTrue(false !== strpos($result['name'], 'Ken'));
+            $this->assertTrue(false !== strpos($result->name(), 'Ken'));
         }
     }
 
-    /**
-     *
-     */
     public function testFindByWithMustNotEqualTest()
     {
         $filter = new Filter();
         $filter->must()->notEqual('name', 'Ken Sugimori');
 
-        $fields = new Fields(['name']);
-        $results = $this->repository->findBy($filter, null, $fields);
+        $results = $this->repository->findBy($filter);
 
         $this->assertEquals(3, count($results));
         foreach ($results as $result) {
-            $this->assertFalse(strpos($result['name'], 'Ken'));
+            $this->assertFalse(strpos($result->name(), 'Ken'));
         }
     }
 
-    /**
-     *
-     */
     public function testFindByWithMustContain()
     {
         $filter = new Filter();
         $filter->must()->contain('name', 'Ken');
 
-        $fields = new Fields(['name']);
-
-        $results = $this->repository->findBy($filter, null, $fields);
+        $results = $this->repository->findBy($filter);
 
         $this->assertEquals(1, count($results));
         foreach ($results as $result) {
-            $this->assertTrue(false !== strpos($result['name'], 'Ken'));
+            $this->assertTrue(false !== strpos($result->name(), 'Ken'));
         }
     }
 
-    /**
-     *
-     */
     public function testFindByWithMustNotContainTest()
     {
         $filter = new Filter();
         $filter->must()->notContain('name', 'Ken');
 
-        $fields = new Fields(['name']);
-        $results = $this->repository->findBy($filter, null, $fields);
+        $results = $this->repository->findBy($filter);
 
         $this->assertEquals(3, count($results));
         foreach ($results as $result) {
-            $this->assertFalse(strpos($result['name'], 'Ken'));
+            $this->assertFalse(strpos($result->name(), 'Ken'));
         }
     }
 
-    /**
-     *
-     */
     public function testFindByWithMustEndsWith()
     {
         $filter = new Filter();
         $filter->must()->endsWith('name', 'mori');
 
-        $fields = new Fields(['name']);
-
-        $results = $this->repository->findBy($filter, null, $fields);
+        $results = $this->repository->findBy($filter);
 
         $this->assertEquals(1, count($results));
         foreach ($results as $result) {
-            $this->assertTrue(false !== strpos($result['name'], 'Ken'));
+            $this->assertTrue(false !== strpos($result->name(), 'Ken'));
         }
     }
 
-    /**
-     *
-     */
     public function testFindByWithMustStartsWith()
     {
         $filter = new Filter();
         $filter->must()->startsWith('name', 'Ke');
 
-        $fields = new Fields(['name']);
-
-        $results = $this->repository->findBy($filter, null, $fields);
+        $results = $this->repository->findBy($filter);
 
         $this->assertEquals(1, count($results));
         foreach ($results as $result) {
-            $this->assertTrue(false !== strpos($result['name'], 'Ken'));
+            $this->assertTrue(false !== strpos($result->name(), 'Ken'));
         }
     }
 
-    /**
-     *
-     */
     public function testFindByWithMustBeLessThan()
     {
         $filter = new Filter();
         $filter->must()->beLessThan('totalOrders', 6);
 
-        $fields = new Fields(['name']);
-
-        $results = $this->repository->findBy($filter, null, $fields);
+        $results = $this->repository->findBy($filter);
 
         $this->assertEquals(4, count($results));
     }
 
-    /**
-     *
-     */
     public function testFindByWithMustBeLessThanOrEqual()
     {
         $filter = new Filter();
         $filter->must()->beLessThanOrEqual('totalOrders', 4);
-        $fields = new Fields(['name']);
-        $results = $this->repository->findBy($filter, null, $fields);
+
+        $results = $this->repository->findBy($filter);
         $this->assertEquals(3, count($results));
     }
 
-    /**
-     *
-     */
     public function testFindByWithMustBeGreaterThan()
     {
         $filter = new Filter();
         $filter->must()->beGreaterThan('totalOrders', 2);
 
-        $fields = new Fields(['name']);
-
-        $results = $this->repository->findBy($filter, null, $fields);
+        $results = $this->repository->findBy($filter);
 
         $this->assertEquals(4, count($results));
     }
 
-    /**
-     *
-     */
     public function testFindByWithMustBeGreaterThanOrEqual()
     {
         $filter = new Filter();
         $filter->must()->beGreaterThanOrEqual('totalOrders', 2);
 
-        $fields = new Fields(['name']);
-
-        $results = $this->repository->findBy($filter, null, $fields);
+        $results = $this->repository->findBy($filter);
 
         $this->assertEquals(4, count($results));
     }
 
-    /**
-     *
-     */
     public function testFindByMustIncludeGroup()
     {
         $filter = new Filter();
-        $filter->must()->includeGroup('date', [new DateTime('2010-12-01'), new DateTime('2010-12-10'), new DateTime('2013-02-22')]);
+        $filter->must()->includeGroup(
+            'date.date',
+            ['2010-12-01 00:00:00.000000',  '2010-12-10 00:00:00.000000',  '2013-02-22 00:00:00.000000']
+        );
 
         $results = $this->repository->findBy($filter);
 
@@ -545,7 +424,10 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
     public function testFindByMustNotIncludeGroupTest()
     {
         $filter = new Filter();
-        $filter->must()->notIncludeGroup('date', [new DateTime('2010-12-01'), new DateTime('2010-12-10'), new DateTime('2013-02-22')]);
+        $filter->must()->notIncludeGroup(
+            'date.date',
+            ['2010-12-01 00:00:00.000000',  '2010-12-10 00:00:00.000000',  '2013-02-22 00:00:00.000000']
+        );
 
         $results = $this->repository->findBy($filter);
 
@@ -583,8 +465,7 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
         $filter = new Filter();
         $filter->must()->empty('totalOrders');
 
-        $fields = new Fields(['name']);
-        $results = $this->repository->findBy($filter, null, $fields);
+        $results = $this->repository->findBy($filter);
 
         $this->assertEquals(0, count($results));
     }
@@ -594,9 +475,7 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
         $filter = new Filter();
         $filter->must()->notEmpty('totalOrders');
 
-        $fields = new Fields(['name']);
-
-        $results = $this->repository->findBy($filter, null, $fields);
+        $results = $this->repository->findBy($filter);
 
         $this->assertEquals(4, count($results));
     }
@@ -606,8 +485,7 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
         $filter = new Filter();
         $filter->must()->notEndsWith('name', 'mori');
 
-        $fields = new Fields(['name']);
-        $results = $this->repository->findBy($filter, null, $fields);
+        $results = $this->repository->findBy($filter);
 
         $this->assertEquals(3, count($results));
     }
@@ -617,8 +495,7 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
         $filter = new Filter();
         $filter->must()->notStartsWith('name', 'Ke');
 
-        $fields = new Fields(['name']);
-        $results = $this->repository->findBy($filter, null, $fields);
+        $results = $this->repository->findBy($filter);
 
         $this->assertEquals(3, count($results));
     }
@@ -626,117 +503,85 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
     //--------------------------------------------------------------------------------
     // MUST NOT FILTER TESTS
     //--------------------------------------------------------------------------------
-    /**
-     *
-     */
+
     public function testFindByWithMustNotEqual()
     {
         $filter = new Filter();
         $filter->mustNot()->equal('name', 'Ken Sugimori');
 
-        $fields = new Fields(['name']);
-
-        $results = $this->repository->findBy($filter, null, $fields);
+        $results = $this->repository->findBy($filter);
 
         $this->assertEquals(3, count($results));
         foreach ($results as $result) {
-            $this->assertFalse(strpos($result['name'], 'Ken'));
+            $this->assertFalse(strpos($result->name(), 'Ken'));
         }
     }
 
-    /**
-     *
-     */
     public function testFindByWithMustNotNotEqual()
     {
         $filter = new Filter();
         $filter->mustNot()->notEqual('name', 'Ken Sugimori');
 
-        $fields = new Fields(['name']);
-
-        $results = $this->repository->findBy($filter, null, $fields);
+        $results = $this->repository->findBy($filter);
 
         $this->assertEquals(1, count($results));
         foreach ($results as $result) {
-            $this->assertTrue(false !== strpos($result['name'], 'Ken'));
+            $this->assertTrue(false !== strpos($result->name(), 'Ken'));
         }
     }
 
-    /**
-     *
-     */
     public function testFindByWithMustNotContain()
     {
         $filter = new Filter();
         $filter->mustNot()->contain('name', 'Ken');
 
-        $fields = new Fields(['name']);
-
-        $results = $this->repository->findBy($filter, null, $fields);
+        $results = $this->repository->findBy($filter);
 
         $this->assertEquals(3, count($results));
         foreach ($results as $result) {
-            $this->assertFalse(strpos($result['name'], 'Ken'));
+            $this->assertFalse(strpos($result->name(), 'Ken'));
         }
     }
 
-    /**
-     *
-     */
     public function testFindByWithMustNotNotContain()
     {
         $filter = new Filter();
         $filter->mustNot()->notContain('name', 'Ken');
 
-        $fields = new Fields(['name']);
-
-        $results = $this->repository->findBy($filter, null, $fields);
+        $results = $this->repository->findBy($filter);
 
         $this->assertEquals(1, count($results));
         foreach ($results as $result) {
-            $this->assertTrue(false !== strpos($result['name'], 'Ken'));
+            $this->assertTrue(false !== strpos($result->name(), 'Ken'));
         }
     }
 
-    /**
-     *
-     */
     public function testFindByWithMustNotEndsWith()
     {
         $filter = new Filter();
         $filter->mustNot()->endsWith('name', 'mori');
 
-        $fields = new Fields(['name']);
-
-        $results = $this->repository->findBy($filter, null, $fields);
+        $results = $this->repository->findBy($filter);
 
         $this->assertEquals(3, count($results));
         foreach ($results as $result) {
-            $this->assertFalse(strpos($result['name'], 'Ken'));
+            $this->assertFalse(strpos($result->name(), 'Ken'));
         }
     }
 
-    /**
-     *
-     */
     public function testFindByWithMustNotStartsWith()
     {
         $filter = new Filter();
         $filter->mustNot()->startsWith('name', 'Ke');
 
-        $fields = new Fields(['name']);
-
-        $results = $this->repository->findBy($filter, null, $fields);
+        $results = $this->repository->findBy($filter);
 
         $this->assertEquals(3, count($results));
         foreach ($results as $result) {
-            $this->assertFalse(strpos($result['name'], 'Ken'));
+            $this->assertFalse(strpos($result->name(), 'Ken'));
         }
     }
 
-    /**
-     *
-     */
     public function testFindByWithMustNotBeLessThan()
     {
         $filter = new Filter();
@@ -747,9 +592,6 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(4, count($results));
     }
 
-    /**
-     *
-     */
     public function testFindByWithMustNotBeLessThanOrEqual()
     {
         $filter = new Filter();
@@ -760,9 +602,6 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(1, count($results));
     }
 
-    /**
-     *
-     */
     public function testFindByWithMustNotBeGreaterThan()
     {
         $filter = new Filter();
@@ -773,9 +612,6 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(4, count($results));
     }
 
-    /**
-     *
-     */
     public function testFindByWithMustNotBeGreaterThanOrEqual()
     {
         $filter = new Filter();
@@ -784,34 +620,31 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(4, count($results));
     }
 
-    /**
-     *
-     */
     public function testFindByMustNotIncludeGroup()
     {
         $filter = new Filter();
-        $filter->mustNot()->includeGroup('date', [new DateTime('2010-12-01'), new DateTime('2010-12-10'), new DateTime('2013-02-22')]);
+        $filter->mustNot()->includeGroup(
+            'date.date',
+            ['2010-12-01 00:00:00.000000',  '2010-12-10 00:00:00.000000',  '2013-02-22 00:00:00.000000']
+        );
 
         $results = $this->repository->findBy($filter);
 
         $this->assertEquals(1, count($results));
     }
 
-    /**
-     *
-     */
     public function testFindByMustNotNotIncludeGroup()
     {
         $filter = new Filter();
-        $filter->mustNot()->notIncludeGroup('date', [new DateTime('2010-12-01'), new DateTime('2010-12-10'), new DateTime('2013-02-22')]);
+        $filter->mustNot()->notIncludeGroup(
+            'date.date',
+            ['2010-12-01 00:00:00.000000',  '2010-12-10 00:00:00.000000',  '2013-02-22 00:00:00.000000']
+        );
 
         $results = $this->repository->findBy($filter);
         $this->assertEquals(3, count($results));
     }
 
-    /**
-     *
-     */
     public function testFindByMustNotRange()
     {
         $filter = new Filter();
@@ -822,9 +655,6 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(2, count($results));
     }
 
-    /**
-     *
-     */
     public function testFindByMustNotNotRangeTest()
     {
         $filter = new Filter();
@@ -840,8 +670,7 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
         $filter = new Filter();
         $filter->mustNot()->empty('totalOrders');
 
-        $fields = new Fields(['name']);
-        $results = $this->repository->findBy($filter, null, $fields);
+        $results = $this->repository->findBy($filter);
 
         $this->assertEquals(4, count($results));
     }
@@ -851,9 +680,7 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
         $filter = new Filter();
         $filter->mustNot()->notEmpty('totalOrders');
 
-        $fields = new Fields(['name']);
-
-        $results = $this->repository->findBy($filter, null, $fields);
+        $results = $this->repository->findBy($filter);
 
         $this->assertEquals(0, count($results));
     }
@@ -863,8 +690,7 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
         $filter = new Filter();
         $filter->mustNot()->notEndsWith('name', 'mori');
 
-        $fields = new Fields(['name']);
-        $results = $this->repository->findBy($filter, null, $fields);
+        $results = $this->repository->findBy($filter);
 
         $this->assertEquals(1, count($results));
     }
@@ -874,8 +700,7 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
         $filter = new Filter();
         $filter->mustNot()->notStartsWith('name', 'Ke');
 
-        $fields = new Fields(['name']);
-        $results = $this->repository->findBy($filter, null, $fields);
+        $results = $this->repository->findBy($filter);
 
         $this->assertEquals(1, count($results));
     }
@@ -883,182 +708,135 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
     //--------------------------------------------------------------------------------
     // SHOULD FILTER TESTS
     //--------------------------------------------------------------------------------
-    /**
-     *
-     */
+
     public function testFindByWithShouldEqual()
     {
         $filter = new Filter();
         $filter->must()->contain('name', 'Hideo Kojima');
         $filter->should()->equal('name', 'Ken Sugimori');
 
-        $fields = new Fields(['name']);
-
-        $results = $this->repository->findBy($filter, null, $fields);
+        $results = $this->repository->findBy($filter);
 
         $this->assertEquals(1, count($results));
     }
 
-    /**
-     *
-     */
     public function testFindByShouldContain()
     {
         $filter = new Filter();
         $filter->must()->contain('name', 'Hideo Kojima');
         $filter->should()->contain('name', 'Ken');
 
-        $fields = new Fields(['name']);
-
-        $results = $this->repository->findBy($filter, null, $fields);
+        $results = $this->repository->findBy($filter);
 
         $this->assertEquals(1, count($results));
     }
 
-    /**
-     *
-     */
     public function testFindByShouldNotContainTest()
     {
         $filter = new Filter();
         $filter->must()->contain('name', 'Hideo Kojima');
         $filter->should()->notContain('name', 'Ken');
 
-        $fields = new Fields(['name']);
-
-        $results = $this->repository->findBy($filter, null, $fields);
+        $results = $this->repository->findBy($filter);
 
         $this->assertEquals(3, count($results));
     }
 
-    /**
-     *
-     */
     public function testFindByShouldEndsWith()
     {
         $filter = new Filter();
         $filter->must()->contain('name', 'Hideo Kojima');
         $filter->should()->endsWith('name', 'mori');
 
-        $fields = new Fields(['name']);
-
-        $results = $this->repository->findBy($filter, null, $fields);
+        $results = $this->repository->findBy($filter);
 
         $this->assertEquals(1, count($results));
     }
 
-    /**
-     *
-     */
     public function testFindByShouldStartsWith()
     {
         $filter = new Filter();
         $filter->must()->contain('name', 'Hideo Kojima');
         $filter->should()->startsWith('name', 'Ke');
 
-        $fields = new Fields(['name']);
-
-        $results = $this->repository->findBy($filter, null, $fields);
+        $results = $this->repository->findBy($filter);
 
         $this->assertEquals(1, count($results));
     }
 
-    /**
-     *
-     */
     public function testFindByShouldBeLessThan()
     {
         $filter = new Filter();
         $filter->must()->contain('name', 'Hideo Kojima');
         $filter->should()->beLessThan('totalOrders', 6);
 
-        $fields = new Fields(['name']);
-
-        $results = $this->repository->findBy($filter, null, $fields);
+        $results = $this->repository->findBy($filter);
 
         $this->assertEquals(4, count($results));
     }
 
-    /**
-     *
-     */
     public function testFindByShouldBeLessThanOrEqual()
     {
         $filter = new Filter();
         $filter->must()->contain('name', 'Hideo Kojima');
         $filter->should()->beLessThanOrEqual('totalOrders', 4);
 
-        $fields = new Fields(['name']);
-
-        $results = $this->repository->findBy($filter, null, $fields);
+        $results = $this->repository->findBy($filter);
 
         $this->assertEquals(3, count($results));
     }
 
-    /**
-     *
-     */
     public function testFindByShouldBeGreaterThan()
     {
         $filter = new Filter();
         $filter->must()->contain('name', 'Hideo Kojima');
         $filter->should()->beGreaterThan('totalOrders', 2);
 
-        $fields = new Fields(['name']);
-
-        $results = $this->repository->findBy($filter, null, $fields);
+        $results = $this->repository->findBy($filter);
 
         $this->assertEquals(4, count($results));
     }
 
-    /**
-     *
-     */
     public function testFindByShouldBeGreaterThanOrEqual()
     {
         $filter = new Filter();
         $filter->must()->contain('name', 'Hideo Kojima');
         $filter->should()->beGreaterThanOrEqual('totalOrders', 2);
 
-        $fields = new Fields(['name']);
-
-        $results = $this->repository->findBy($filter, null, $fields);
+        $results = $this->repository->findBy($filter);
 
         $this->assertEquals(4, count($results));
     }
 
-    /**
-     *
-     */
     public function testFindByShouldIncludeGroup()
     {
         $filter = new Filter();
         $filter->must()->contain('name', 'Hideo Kojima');
 
-        $filter->should()->includeGroup('date', [new DateTime('2010-12-01'), new DateTime('2010-12-10'), new DateTime('2013-02-22')]);
+        $filter->should()->includeGroup(
+            'date.date',
+            ['2010-12-01 00:00:00.000000',  '2010-12-10 00:00:00.000000',  '2013-02-22 00:00:00.000000']
+        );
 
         $results = $this->repository->findBy($filter);
 
         $this->assertEquals(3, count($results));
     }
 
-    /**
-     *
-     */
     public function testFindByShouldNotIncludeGroupTest()
     {
         $filter = new Filter();
         $filter->must()->contain('name', 'Hideo Kojima');
-        $filter->should()->notIncludeGroup('date', [new DateTime('2010-12-01'), new DateTime('2010-12-10'), new DateTime('2013-02-22')]);
+        $filter->should()->notIncludeGroup(
+            'date.date',
+            ['2010-12-01 00:00:00.000000',  '2010-12-10 00:00:00.000000',  '2013-02-22 00:00:00.000000']
+        );
 
         $results = $this->repository->findBy($filter);
 
         $this->assertEquals(1, count($results));
     }
 
-    /**
-     *
-     */
     public function testFindByShouldRange()
     {
         $filter = new Filter();
@@ -1070,9 +848,6 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(3, count($results));
     }
 
-    /**
-     *
-     */
     public function testFindByShouldNotRangeTest()
     {
         $filter = new Filter();

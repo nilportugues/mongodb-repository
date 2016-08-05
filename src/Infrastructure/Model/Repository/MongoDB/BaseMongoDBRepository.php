@@ -2,13 +2,13 @@
 
 namespace NilPortugues\Foundation\Infrastructure\Model\Repository\MongoDB;
 
-use InvalidArgumentException;
 use MongoDB\BSON\ObjectID;
 use MongoDB\Client;
 use MongoDB\Model\BSONDocument;
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Fields;
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Filter;
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Identity;
+use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Mapping;
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Sort;
 
 abstract class BaseMongoDBRepository
@@ -44,17 +44,21 @@ abstract class BaseMongoDBRepository
      * @var string
      */
     protected $primaryKey = 'id';
+    /** @var Mapping */
+    protected $mapping;
 
     /**
      * BaseMongoDBRepository constructor.
      *
-     * @param Client $client
+     * @param Mapping $mapping
+     * @param Client  $client
      * @param $databaseName
      * @param $collectionName
      * @param array $options
      */
-    protected function __construct(Client $client, $databaseName, $collectionName, array $options = [])
+    protected function __construct(Mapping $mapping, Client $client, $databaseName, $collectionName, array $options = [])
     {
+        $this->mapping = $mapping;
         $this->client = $client;
         $this->databaseName = (string) $databaseName;
         $this->collectionName = (string) $collectionName;
@@ -62,16 +66,17 @@ abstract class BaseMongoDBRepository
     }
 
     /**
-     * @param Client $client
-     * @param string $databaseName
-     * @param string $collectionName
-     * @param array  $options
+     * @param Mapping $mapping
+     * @param Client  $client
+     * @param $databaseName
+     * @param $collectionName
+     * @param array $options
      *
      * @return static
      */
-    public static function create(Client $client, $databaseName, $collectionName, array $options = [])
+    public static function create(Mapping $mapping, Client $client, $databaseName, $collectionName, array $options = [])
     {
-        return new static($client, $databaseName, $collectionName, $options);
+        return new static($mapping, $client, $databaseName, $collectionName, $options);
     }
 
     /**
@@ -93,7 +98,7 @@ abstract class BaseMongoDBRepository
     protected function applyFiltering(Filter $filter = null, array &$filterArray)
     {
         if (null !== $filter) {
-            MongoDBFilter::filter($filterArray, $filter);
+            MongoDBFilter::filter($filterArray, $filter, $this->mapping);
         }
     }
 
@@ -104,13 +109,16 @@ abstract class BaseMongoDBRepository
      */
     protected function applyIdFiltering(Identity $id)
     {
+        $filter = [$this->mapping->identity() => $id->id()];
         try {
-            $filter = [self::MONGODB_OBJECT_ID => new ObjectID($id->id())];
-        } catch (InvalidArgumentException $e) {
-            $filter = [$this->primaryKey => $id->id()];
+            if ($this->mapping->autoGenerateId()) {
+                $filter = [self::MONGODB_OBJECT_ID => new ObjectID($id->id())];
+            }
+        } catch (\InvalidArgumentException $e) {
+            $filter = [$this->mapping->identity() => $id->id()];
+        } finally {
+            return $filter;
         }
-
-        return $filter;
     }
 
     /**
@@ -122,6 +130,10 @@ abstract class BaseMongoDBRepository
     {
         if ($data instanceof BSONDocument) {
             $data = $data->getArrayCopy();
+        }
+
+        if ($data instanceof ObjectID) {
+            $data = $data->__toString();
         }
 
         if (\is_array($data)) {
@@ -155,7 +167,27 @@ abstract class BaseMongoDBRepository
     protected function applySorting(Sort $sort = null, array &$options)
     {
         if (null !== $sort) {
-            MongoDBSorter::sort($options, $sort);
+            MongoDBSorter::sort($options, $sort, $this->mapping);
         }
+    }
+
+    /**
+     * @param Fields $fields
+     *
+     * @return array
+     */
+    protected function getColumns(Fields $fields = null)
+    {
+        $newFields = [];
+
+        if ($fields) {
+            foreach ($this->mapping->map() as $objectProperty => $tableColumn) {
+                if (in_array($objectProperty, $fields->get())) {
+                    $newFields[$objectProperty] = $tableColumn;
+                }
+            }
+        }
+
+        return $newFields;
     }
 }

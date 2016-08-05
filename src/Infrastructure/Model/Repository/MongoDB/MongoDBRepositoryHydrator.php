@@ -1,4 +1,5 @@
 <?php
+
 namespace NilPortugues\Foundation\Infrastructure\Model\Repository\MongoDB;
 
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Fields;
@@ -49,8 +50,13 @@ trait MongoDBRepositoryHydrator
     {
         $page = parent::findAll($pageable);
 
+        $results = $page->content();
+        if (!empty($results) && array_key_exists(0, $results) && is_array($results[0])) {
+            $results = $this->hydrateArray($page->content());
+        }
+
         return new Page(
-            $this->hydrateArray($page->content()),
+            $results,
             $page->totalElements(),
             $page->pageNumber(),
             $page->totalPages(),
@@ -67,6 +73,20 @@ trait MongoDBRepositoryHydrator
     {
         $results = parent::findByDistinct($distinctFields, $filter, $sort);
 
+        if (!empty($results) && array_key_exists(0, $results) && is_scalar($results[0])) {
+            return $results;
+        }
+
         return $this->hydrateArray($results);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function add(Identity $value)
+    {
+        $value = parent::add($value);
+
+        return $this->mapping->fromArray($value);
     }
 }

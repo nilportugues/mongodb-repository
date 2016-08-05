@@ -1,55 +1,33 @@
 <?php
 
-use NilPortugues\Example\Domain\User;
-use NilPortugues\Example\Domain\UserId;
-use NilPortugues\Example\Persistence\MongoDB\UserRepository;
-use NilPortugues\Example\Service\UserAdapter;
+use MongoDB\Client;
+use NilPortugues\Example\User;
+use NilPortugues\Example\UserId;
+use NilPortugues\Example\UserMapping;
+use NilPortugues\Example\UserRepository;
 use NilPortugues\Foundation\Domain\Model\Repository\Filter;
 use NilPortugues\Foundation\Domain\Model\Repository\Order;
 use NilPortugues\Foundation\Domain\Model\Repository\Sort;
 
 include_once __DIR__.'./../vendor/autoload.php';
 
-//-------------------------------------------------------------------------------------------------------------
-// - Create database if does not exist
-//-------------------------------------------------------------------------------------------------------------
+$client = new Client();
+$mapping = new UserMapping();
 
-$client = new \MongoDB\Client();
+$repository = new UserRepository($mapping, $client, 'example_db', 'users');
+$user = new User(1, 'nilportugues', 'Nil', 'hello@example.org', new DateTime('2016-01-11'));
+$repository->add($user);
 
-//-------------------------------------------------------------------------------------------------------------
-// - Create dummy data
-//-------------------------------------------------------------------------------------------------------------
-
-$models[] = new User(new UserId(1), 'Admin User', new DateTimeImmutable('2016-02-18'));
-
-for ($i = 2; $i <= 20; ++$i) {
-    $models[] = new User(
-        new UserId($i),
-        'Dummy User '.$i,
-        new DateTimeImmutable((new DateTime())->setDate(2016, rand(1, 12), rand(1, 27))->format('Y-m-d'))
-    );
-}
-
-
-$repository = new UserRepository($client, new UserAdapter());
-$repository->removeAll();
-$repository->addAll($models);
-
-//-------------------------------------------------------------------------------------------------------------
-// - getUserAction
-//-------------------------------------------------------------------------------------------------------------
-
-print_r($repository->find(new UserId(1)));
-
-//-------------------------------------------------------------------------------------------------------------
-// - getUsersRegisteredLastMonth
-//-------------------------------------------------------------------------------------------------------------
+$userId = new UserId(1);
+print_r($repository->find($userId));
+echo PHP_EOL;
 
 $filter = new Filter();
-$filter->must()->notIncludeGroup('userId', [2, 5]);
-$filter->must()->beGreaterThan('registrationDate', new DateTime('2016-03-01'));
+$filter->must()->beGreaterThanOrEqual('registeredOn.date', '2016-01-01 00:00:00');
+$filter->must()->beLessThan('registeredOn.date', '2016-02-01 00:00:00');
 
 $sort = new Sort();
-$sort->setOrderFor('registrationDate', new Order('ASC'));
+$sort->setOrderFor('registeredOn.date', new Order('ASC'));
 
 print_r($repository->findBy($filter, $sort));
+echo PHP_EOL;

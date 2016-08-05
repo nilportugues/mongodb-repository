@@ -12,6 +12,7 @@ namespace NilPortugues\Foundation\Infrastructure\Model\Repository\MongoDB;
 
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\BaseFilter;
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Filter as FilterInterface;
+use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Mapping;
 
 /**
  * Class MongoDBFilter.
@@ -31,16 +32,23 @@ class MongoDBFilter
     const NOT_ENDS_WITH_PATTERN = '!(/%s$/i.test(this.%s))';
     const NOT_RANGES_REGEX = '%s < this.%s && %s > this.%s ';
 
+    /** @var Mapping */
+    protected static $mapping;
+
     /**
      * @param array           $filterArray
      * @param FilterInterface $filter
+     * @param Mapping         $mapping
      */
-    public static function filter(array &$filterArray, FilterInterface $filter)
+    public static function filter(array &$filterArray, FilterInterface $filter, Mapping $mapping)
     {
+        self::$mapping = $mapping;
+        $columns = $mapping->map();
+
         foreach ($filter->filters() as $condition => $filters) {
             $filters = self::removeEmptyFilters($filters);
             if (count($filters) > 0) {
-                self::processConditions($filterArray, $condition, $filters);
+                self::processConditions($columns, $filterArray, $condition, $filters);
             }
         }
 
@@ -65,35 +73,38 @@ class MongoDBFilter
     }
 
     /**
-     * @param array  $filterArray
-     * @param string $condition
-     * @param array  $filters
+     * @param array $columns
+     * @param array $filterArray
+     * @param $condition
+     * @param array $filters
      */
-    private static function processConditions(array &$filterArray, $condition, array &$filters)
+    private static function processConditions(array &$columns, array &$filterArray, $condition, array &$filters)
     {
         switch ($condition) {
             case self::MUST:
-                self::applyFilter($filterArray, $filters, '$and', '$and', '&&');
+                self::applyFilter($columns, $filterArray, $filters, '$and', '$and', '&&');
                 break;
 
             case self::MUST_NOT:
-                self::applyFilter($filterArray, $filters, '$not', '$and', '&&');
+                self::applyFilter($columns, $filterArray, $filters, '$not', '$and', '&&');
                 break;
 
             case self::SHOULD:
-                self::applyFilter($filterArray, $filters, '$or', '$or', '||');
+                self::applyFilter($columns, $filterArray, $filters, '$or', '$or', '||');
                 break;
         }
     }
 
     /**
-     * @param array  $filterArray
-     * @param array  $filters
-     * @param string $logicOperator
-     * @param string $mongoOperator
-     * @param string $javascriptOperator
+     * @param array $columns
+     * @param array $filterArray
+     * @param array $filters
+     * @param $logicOperator
+     * @param $mongoOperator
+     * @param $javascriptOperator
      */
     protected static function applyFilter(
+        array &$columns,
         array &$filterArray,
         array &$filters,
         $logicOperator,
@@ -107,7 +118,7 @@ class MongoDBFilter
             $filterArray[$mongoOperator] = [];
         }
 
-        self::apply($rawConditions, $filters, $logicOperator, $regexConditions);
+        self::apply($columns, $rawConditions, $filters, $logicOperator, $regexConditions);
 
         if (!empty($regexConditions)) {
             $rawConditions['$where'] = implode(' '.$javascriptOperator.' ', $regexConditions);
@@ -117,15 +128,18 @@ class MongoDBFilter
     }
 
     /**
-     * @param array  $filterArray
-     * @param array  $filters
-     * @param string $conditional
-     * @param array  $where
+     * @param array $columns
+     * @param array $filterArray
+     * @param array $filters
+     * @param $conditional
+     * @param array $where
      */
-    protected static function apply(array &$filterArray, array $filters, $conditional, array &$where)
+    protected static function apply(array &$columns, array &$filterArray, array $filters, $conditional, array &$where)
     {
         foreach ($filters as $filterName => $valuePair) {
             foreach ($valuePair as $key => $value) {
+                $key = self::fetchColumnName($columns, $key);
+
                 if (is_array($value) && count($value) > 0) {
                     $value = array_values($value);
                     if (count($value[0]) > 1) {
@@ -268,5 +282,24 @@ class MongoDBFilter
             is_string($value[0][1]) ? "'".$value[0][1]."'" : $value[0][1],
             $key
         );
+    }
+
+    /**
+     * @param $columns
+     * @param $propertyName
+     *
+     * @return int
+     */
+    protected static function fetchColumnName(array &$columns, $propertyName)
+    {
+        if ($propertyName === BaseMongoDBRepository::MONGODB_OBJECT_ID) {
+            return $propertyName;
+        }
+
+        if (empty($columns[$propertyName])) {
+            throw new \RuntimeException(sprintf('Property %s has no associated column.', $propertyName));
+        }
+
+        return $columns[$propertyName];
     }
 }

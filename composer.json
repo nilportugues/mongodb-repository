@@ -13,9 +13,9 @@
   ],
   "require": {
     "mongodb/mongodb": "^1.0",
-    "nilportugues/repository": "^3.0",
-    "nilportugues/serializer": "1.1.*",
-    "nilportugues/assert": "1.0.*"
+    "nilportugues/repository": "^3.0.2",
+    "nilportugues/serializer": "^1.1",
+    "nilportugues/assert": "^1.0"
   },
   "require-dev": {
     "phpunit/phpunit": "4.8.*",

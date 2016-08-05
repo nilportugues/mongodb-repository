@@ -8,10 +8,13 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-namespace NilPortugues\Example\Domain;
+namespace NilPortugues\Example;
 
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Identity;
 
+/**
+ * Class UserId.
+ */
 class UserId implements Identity
 {
     private $id;

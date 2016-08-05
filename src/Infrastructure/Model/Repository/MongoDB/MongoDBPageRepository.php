@@ -30,6 +30,7 @@ class MongoDBPageRepository extends BaseMongoDBRepository implements PageReposit
             $this->applySorting($pageable->sortings(), $options);
 
             $total = $collection->count($filterArray, $options);
+
             $page = $pageable->pageNumber() - 1;
             $page = ($page < 0) ? 1 : $page;
 
@@ -39,7 +40,8 @@ class MongoDBPageRepository extends BaseMongoDBRepository implements PageReposit
             $options['limit'] = $pageSize;
             $options['skip'] = $pageSize * ($page);
 
-            $distinct = $pageable->distinctFields()->get();
+            $distinct = $this->getColumns($pageable->distinctFields());
+
             if (count($distinct) > 0) {
                 if (count($distinct) > 1) {
                     throw new \Exception('Mongo cannot select more than one field when calling distinct.');

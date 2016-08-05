@@ -3,16 +3,37 @@
 namespace NilPortugues\Foundation\Infrastructure\Model\Repository\MongoDB;
 
 use MongoDB\BSON\ObjectID;
+use MongoDB\Client;
 use MongoDB\Operation\BulkWrite;
 use MongoDB\Operation\FindOneAndUpdate;
 use NilPortugues\Assert\Assert;
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Filter;
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Identity;
+use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Mapping;
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\WriteRepository;
 use NilPortugues\Foundation\Domain\Model\Repository\Filter as DomainFilter;
+use NilPortugues\Foundation\Infrastructure\ObjectFlattener;
 
 class MongoDBWriteRepository extends BaseMongoDBRepository implements WriteRepository
 {
+    /** @var \NilPortugues\Serializer\Serializer */
+    protected $serializer;
+
+    /**
+     * MongoDBWriteRepository constructor.
+     *
+     * @param Mapping $mapping
+     * @param Client  $client
+     * @param $databaseName
+     * @param $collectionName
+     * @param array $options
+     */
+    public function __construct(Mapping $mapping, Client $client, $databaseName, $collectionName, array $options = [])
+    {
+        $this->serializer = ObjectFlattener::instance();
+        parent::__construct($mapping, $client, $databaseName, $collectionName, $options);
+    }
+
     /**
      * Returns the total amount of elements in the repository given the restrictions provided by the Filter object.
      *
@@ -40,8 +61,7 @@ class MongoDBWriteRepository extends BaseMongoDBRepository implements WriteRepos
      */
     public function exists(Identity $id) : bool
     {
-        $options = $this->options;
-        $result = $this->getCollection()->findOne($this->applyIdFiltering($id), $options);
+        $result = $this->getCollection()->findOne($this->applyIdFiltering($id), $this->options);
 
         return (!empty($result)) ? true : false;
     }
@@ -74,25 +94,32 @@ class MongoDBWriteRepository extends BaseMongoDBRepository implements WriteRepos
         $documents = [];
         $mayRequireInsert = [];
         $options = array_merge($this->options, ['upsert' => true, 'ordered' => false]);
+        $mappings = $this->mapping->map();
 
         foreach ($values as $value) {
             Assert::isInstanceOf($value, Identity::class);
-            $value = MongoDBTransformer::create()->serialize($value);
 
-            if (self::MONGODB_OBJECT_ID === $this->primaryKey) {
-                $id = new ObjectID(
-                    (!empty($value[self::MONGODB_OBJECT_ID])) ? $value[self::MONGODB_OBJECT_ID] : null
-                );
-            } else {
-                $id = (!empty($value[$this->primaryKey])) ? $value[$this->primaryKey] : new ObjectID(null);
+            //Create the insertable data structure.
+            $flattenedValue = $this->flattenObject($value);
+            $insertValue = [];
+            foreach ($mappings as $objectProperty => $field) {
+                $insertValue[$field] = null;
+                if (array_key_exists($objectProperty, $flattenedValue)) {
+                    $insertValue[$field] = $flattenedValue[$objectProperty];
+                }
+            }
+
+            $id = $insertValue[$this->mapping->identity()];
+            if ($this->mapping->autoGenerateId()) {
+                $id = null;
             }
 
             if (null === $id) {
-                $documents[][BulkWrite::INSERT_ONE] = [$value];
+                $documents[][BulkWrite::INSERT_ONE] = [$insertValue];
             } else {
-                $mayRequireInsert[][BulkWrite::INSERT_ONE] = [$value];
-                unset($value[$this->primaryKey]);
-                $documents[][BulkWrite::UPDATE_ONE] = [[$this->primaryKey => $id], ['$set' => $value]];
+                $mayRequireInsert[][BulkWrite::INSERT_ONE] = [$insertValue];
+                unset($insertValue[$this->mapping->identity()]);
+                $documents[][BulkWrite::UPDATE_ONE] = [[$this->mapping->identity() => $id], ['$set' => $insertValue]];
             }
         }
 
@@ -201,17 +228,53 @@ class MongoDBWriteRepository extends BaseMongoDBRepository implements WriteRepos
      */
     protected function updateOne(Identity $value) : array
     {
-        $value = MongoDBTransformer::create()->serialize($value);
-        $id = (self::MONGODB_OBJECT_ID === $this->primaryKey) ? new ObjectID($value[self::MONGODB_OBJECT_ID]) : $value[$this->primaryKey];
-        unset($value[$this->primaryKey]);
+        $flattenedValue = $this->flattenObject($value);
+        $mappings = $this->mappingWithoutIdentityColumn();
+
+        $updateValue = [];
+        foreach ($mappings as $objectProperty => $field) {
+            $updateValue[$field] = $flattenedValue[$objectProperty];
+        }
+
+        $id = $value->id();
+        $idField = $this->mapping->identity();
+
+        if ($this->mapping->autoGenerateId()) {
+            $id = new ObjectID($flattenedValue[self::MONGODB_OBJECT_ID]);
+            $idField = self::MONGODB_OBJECT_ID;
+        }
 
         $result = $this->getCollection()->findOneAndUpdate(
-            [$this->primaryKey => $id],
-            ['$set' => $value],
+            [$idField => $id],
+            ['$set' => $updateValue],
             array_merge($this->options, ['returnDocument' => FindOneAndUpdate::RETURN_DOCUMENT_AFTER])
         );
 
         return (null !== $result) ? $this->recursiveArrayCopy((array) $result) : [];
+    }
+
+    /**
+     * @param $value
+     *
+     * @return array
+     */
+    protected function flattenObject($value) : array
+    {
+        return $this->serializer->serialize($value);
+    }
+
+    /**
+     * @return array
+     */
+    protected function mappingWithoutIdentityColumn() : array
+    {
+        $mappings = $this->mapping->map();
+
+        if (false !== ($pos = array_search($this->mapping->identity(), $mappings, true))) {
+            unset($mappings[$pos]);
+        }
+
+        return $mappings;
     }
 
     /**
@@ -221,11 +284,28 @@ class MongoDBWriteRepository extends BaseMongoDBRepository implements WriteRepos
      */
     protected function addOne(Identity $value) : array
     {
-        $value = MongoDBTransformer::create()->serialize($value);
-        $id = $this->getCollection()->insertOne($value, $this->options)->getInsertedId();
+        $flattenedValue = $this->flattenObject($value);
+        $mappings = $this->mappingWithoutIdentityColumn();
 
-        /** @var \MongoDB\Model\BSONDocument $result */
-        $result = $this->getCollection()->findOne(new EntityId($id), $this->options);
+        $insertValue = [];
+        foreach ($mappings as $objectProperty => $field) {
+            $insertValue[$field] = $flattenedValue[$objectProperty];
+        }
+
+        if ($this->mapping->autoGenerateId()) {
+            $insertValue[self::MONGODB_OBJECT_ID] = new ObjectID($value[self::MONGODB_OBJECT_ID]);
+        } else {
+            $insertValue[$this->mapping->identity()] = $value->id();
+        }
+
+        $inserted = $this->getCollection()->insertOne($insertValue, $this->options);
+        $fetchCondition = [$this->mapping->identity() => $value->id()];
+
+        if ($this->mapping->autoGenerateId()) {
+            $fetchCondition = $inserted->getInsertedId();
+        }
+
+        $result = $this->getCollection()->findOne($fetchCondition, $this->options);
 
         return (null !== $result) ? $this->recursiveArrayCopy($result) : [];
     }

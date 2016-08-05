@@ -14,6 +14,7 @@ use MongoDB\Client;
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Fields;
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Filter;
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Identity;
+use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Mapping;
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Page;
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Pageable;
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\PageRepository;
@@ -64,24 +65,49 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
     /** @var MongoDBPageRepository */
     protected $pageRepository;
 
+    /** @var Mapping */
+    protected $mapping;
+
     /**
      * MongoDBRepository constructor.
      *
-     * @param Client $client
-     * @param        $databaseName
-     * @param        $collectionName
-     * @param array  $options
+     * @param Mapping $mapping
+     * @param Client  $client
+     * @param $databaseName
+     * @param $collectionName
+     * @param array $options
      */
-    public function __construct(Client $client, $databaseName, $collectionName, array $options = [])
+    public function __construct(Mapping $mapping, Client $client, $databaseName, $collectionName, array $options = [])
     {
+        $this->mapping = $mapping;
         $this->client = $client;
         $this->databaseName = (string) $databaseName;
         $this->collectionName = (string) $collectionName;
         $this->options = $options;
 
-        $this->writeRepository = MongoDBWriteRepository::create($this->client, $this->databaseName, $this->collectionName, $this->options);
-        $this->readRepository = MongoDBReadRepository::create($this->client, $this->databaseName, $this->collectionName, $this->options);
-        $this->pageRepository = MongoDBPageRepository::create($this->client, $this->databaseName, $this->collectionName, $this->options);
+        $this->writeRepository = MongoDBWriteRepository::create(
+            $this->mapping,
+            $this->client,
+            $this->databaseName,
+            $this->collectionName,
+            $this->options
+        );
+
+        $this->readRepository = MongoDBReadRepository::create(
+            $this->mapping,
+            $this->client,
+            $this->databaseName,
+            $this->collectionName,
+            $this->options
+        );
+
+        $this->pageRepository = MongoDBPageRepository::create(
+            $this->mapping,
+            $this->client,
+            $this->databaseName,
+            $this->collectionName,
+            $this->options
+        );
     }
 
     /**

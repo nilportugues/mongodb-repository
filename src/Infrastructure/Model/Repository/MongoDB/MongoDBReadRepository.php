@@ -8,6 +8,7 @@ use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Filter;
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Identity;
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\ReadRepository;
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Sort;
+use NilPortugues\Foundation\Domain\Model\Repository\Fields as FieldsInstance;
 
 class MongoDBReadRepository extends BaseMongoDBRepository implements ReadRepository
 {
@@ -22,7 +23,7 @@ class MongoDBReadRepository extends BaseMongoDBRepository implements ReadReposit
     public function find(Identity $id, Fields $fields = null)
     {
         $options = $this->options;
-        $this->fetchSpecificFields($fields, $options);
+        $this->fetchSpecificFields(new FieldsInstance($this->getColumns($fields)), $options);
 
         /** @var BSONDocument $result */
         $result = $this->getCollection()->findOne($this->applyIdFiltering($id), $options);
@@ -47,7 +48,7 @@ class MongoDBReadRepository extends BaseMongoDBRepository implements ReadReposit
 
         $this->applyFiltering($filter, $filterArray);
         $this->applySorting($sort, $options);
-        $this->fetchSpecificFields($fields, $options);
+        $this->fetchSpecificFields(new FieldsInstance($this->getColumns($fields)), $options);
 
         $result = $collection->find($filterArray, $options)->toArray();
 
@@ -78,7 +79,7 @@ class MongoDBReadRepository extends BaseMongoDBRepository implements ReadReposit
         $this->applyFiltering($filter, $filterArray);
         $this->applySorting($sort, $options);
 
-        $fields = $distinctFields->get();
+        $fields = $this->getColumns(new FieldsInstance($distinctFields->get()));
 
         if (count($fields) > 1) {
             throw new \Exception('Mongo cannot select more than one field when calling distinct.');
