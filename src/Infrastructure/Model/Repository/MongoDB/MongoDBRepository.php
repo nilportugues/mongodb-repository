@@ -91,7 +91,7 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
      *
      * @return int
      */
-    public function count(Filter $filter = null)
+    public function count(Filter $filter = null) : int
     {
         return $this->writeRepository->count($filter);
     }
@@ -128,7 +128,7 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
      *
      * @return bool
      */
-    public function exists(Identity $id)
+    public function exists(Identity $id) : bool
     {
         return $this->writeRepository->exists($id);
     }
@@ -154,7 +154,7 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
      *
      * @return array
      */
-    public function findBy(Filter $filter = null, Sort $sort = null, Fields $fields = null)
+    public function findBy(Filter $filter = null, Sort $sort = null, Fields $fields = null) : array
     {
         return $this->readRepository->findBy($filter, $sort, $fields);
     }
@@ -174,8 +174,6 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
      * If $filter is null, all the repository data will be deleted.
      *
      * @param Filter $filter
-     *
-     * @return bool
      */
     public function removeAll(Filter $filter = null)
     {
@@ -189,7 +187,7 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
      *
      * @return Page
      */
-    public function findAll(Pageable $pageable = null)
+    public function findAll(Pageable $pageable = null) : Page
     {
         return $this->pageRepository->findAll($pageable);
     }
@@ -205,7 +203,7 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
      *
      * @throws \Exception
      */
-    public function findByDistinct(Fields $distinctFields, Filter $filter = null, Sort $sort = null)
+    public function findByDistinct(Fields $distinctFields, Filter $filter = null, Sort $sort = null) : array
     {
         return $this->readRepository->findByDistinct($distinctFields, $filter, $sort);
     }

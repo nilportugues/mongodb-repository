@@ -20,7 +20,7 @@ class MongoDBWriteRepository extends BaseMongoDBRepository implements WriteRepos
      *
      * @return int
      */
-    public function count(Filter $filter = null)
+    public function count(Filter $filter = null) : int
     {
         $options = $this->options;
         $collection = $this->getCollection();
@@ -38,7 +38,7 @@ class MongoDBWriteRepository extends BaseMongoDBRepository implements WriteRepos
      *
      * @return bool
      */
-    public function exists(Identity $id)
+    public function exists(Identity $id) : bool
     {
         $options = $this->options;
         $result = $this->getCollection()->findOne($this->applyIdFiltering($id), $options);
@@ -130,7 +130,7 @@ class MongoDBWriteRepository extends BaseMongoDBRepository implements WriteRepos
      *
      * @return array
      */
-    protected function findByHelper(Filter $filter = null)
+    protected function findByHelper(Filter $filter = null) : array
     {
         $collection = $this->getCollection();
         $options = $this->options;
@@ -161,8 +161,6 @@ class MongoDBWriteRepository extends BaseMongoDBRepository implements WriteRepos
      * If $filter is null, all the repository data will be deleted.
      *
      * @param Filter $filter
-     *
-     * @return bool
      */
     public function removeAll(Filter $filter = null)
     {
@@ -171,8 +169,6 @@ class MongoDBWriteRepository extends BaseMongoDBRepository implements WriteRepos
 
         if (null === $filter) {
             $collection->drop($options);
-
-            return;
         }
 
         $filterArray = [];
@@ -203,7 +199,7 @@ class MongoDBWriteRepository extends BaseMongoDBRepository implements WriteRepos
      *
      * @return array
      */
-    protected function updateOne(Identity $value)
+    protected function updateOne(Identity $value) : array
     {
         $value = MongoDBTransformer::create()->serialize($value);
         $id = (self::MONGODB_OBJECT_ID === $this->primaryKey) ? new ObjectID($value[self::MONGODB_OBJECT_ID]) : $value[$this->primaryKey];
@@ -223,7 +219,7 @@ class MongoDBWriteRepository extends BaseMongoDBRepository implements WriteRepos
      *
      * @return array
      */
-    protected function addOne(Identity $value)
+    protected function addOne(Identity $value) : array
     {
         $value = MongoDBTransformer::create()->serialize($value);
         $id = $this->getCollection()->insertOne($value, $this->options)->getInsertedId();

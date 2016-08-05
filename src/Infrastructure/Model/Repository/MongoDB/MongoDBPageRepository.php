@@ -19,7 +19,7 @@ class MongoDBPageRepository extends BaseMongoDBRepository implements PageReposit
      *
      * @throws \Exception
      */
-    public function findAll(Pageable $pageable = null)
+    public function findAll(Pageable $pageable = null) : Page
     {
         $options = $this->options;
         $collection = $this->getCollection();
@@ -34,7 +34,7 @@ class MongoDBPageRepository extends BaseMongoDBRepository implements PageReposit
             $page = ($page < 0) ? 1 : $page;
 
             $pageSize = $pageable->pageSize();
-            $pageSize = ($pageSize>0) ? $pageSize : 1;
+            $pageSize = ($pageSize > 0) ? $pageSize : 1;
 
             $options['limit'] = $pageSize;
             $options['skip'] = $pageSize * ($page);
@@ -68,7 +68,7 @@ class MongoDBPageRepository extends BaseMongoDBRepository implements PageReposit
      *
      * @return array
      */
-    protected function bsonDocumentArrayToNativeArray($bsonDocumentArray)
+    protected function bsonDocumentArrayToNativeArray($bsonDocumentArray) : array
     {
         $resultArray = [];
 

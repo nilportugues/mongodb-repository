@@ -19,9 +19,6 @@ use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Sort;
 use NilPortugues\Foundation\Domain\Model\Repository\Page;
 use NilPortugues\Foundation\Infrastructure\Model\Repository\MongoDB\MongoDBRepository;
 
-/**
- * Class UserRepository.
- */
 class UserRepository extends MongoDBRepository
 {
     /**
@@ -60,7 +57,7 @@ class UserRepository extends MongoDBRepository
     /**
      * {@inheritdoc}
      */
-    public function findBy(Filter $filter = null, Sort $sort = null, Fields $fields = null)
+    public function findBy(Filter $filter = null, Sort $sort = null, Fields $fields = null) : array
     {
         $modelArray = parent::findBy($filter, $sort, $fields);
 
@@ -70,7 +67,7 @@ class UserRepository extends MongoDBRepository
     /**
      * {@inheritdoc}
      */
-    public function findAll(Pageable $pageable = null)
+    public function findAll(Pageable $pageable = null) : \NilPortugues\Foundation\Domain\Model\Repository\Contracts\Page
     {
         $page = parent::findAll($pageable);
 
@@ -90,7 +87,7 @@ class UserRepository extends MongoDBRepository
      *
      * @return array
      */
-    protected function fromMongoDBArray(array $modelArray)
+    protected function fromMongoDBArray(array $modelArray) : array
     {
         $results = [];
         foreach ($modelArray as $model) {

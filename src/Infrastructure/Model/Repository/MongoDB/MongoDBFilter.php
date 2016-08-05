@@ -218,6 +218,18 @@ class MongoDBFilter
                             $filterArray[$key] = $value;
                         }
                         break;
+
+                    case BaseFilter::EMPTY_FILTER:
+                        break;
+
+                    case BaseFilter::NOT_EMPTY:
+                        break;
+
+                    case BaseFilter::NOT_ENDS:
+                        break;
+
+                    case BaseFilter::NOT_STARTS:
+                        break;
                 }
             }
         }

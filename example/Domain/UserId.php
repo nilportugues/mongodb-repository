@@ -12,9 +12,6 @@ namespace NilPortugues\Example\Domain;
 
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Identity;
 
-/**
- * Class UserId.
- */
 class UserId implements Identity
 {
     private $id;

@@ -39,7 +39,7 @@ class MongoDBReadRepository extends BaseMongoDBRepository implements ReadReposit
      *
      * @return array
      */
-    public function findBy(Filter $filter = null, Sort $sort = null, Fields $fields = null)
+    public function findBy(Filter $filter = null, Sort $sort = null, Fields $fields = null) : array
     {
         $collection = $this->getCollection();
         $options = $this->options;
@@ -69,7 +69,7 @@ class MongoDBReadRepository extends BaseMongoDBRepository implements ReadReposit
      *
      * @throws \Exception
      */
-    public function findByDistinct(Fields $distinctFields, Filter $filter = null, Sort $sort = null)
+    public function findByDistinct(Fields $distinctFields, Filter $filter = null, Sort $sort = null) : array
     {
         $collection = $this->getCollection();
         $options = $this->options;
@@ -100,7 +100,7 @@ class MongoDBReadRepository extends BaseMongoDBRepository implements ReadReposit
      *
      * @return int
      */
-    public function count(Filter $filter = null)
+    public function count(Filter $filter = null) : int
     {
         $options = $this->options;
         $collection = $this->getCollection();
@@ -117,7 +117,7 @@ class MongoDBReadRepository extends BaseMongoDBRepository implements ReadReposit
      *
      * @return bool
      */
-    public function exists(Identity $id)
+    public function exists(Identity $id) : bool
     {
         $options = $this->options;
         $result = $this->getCollection()->findOne($this->applyIdFiltering($id), $options);
