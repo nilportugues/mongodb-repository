@@ -197,9 +197,23 @@ class MongoDBFilter
                             $key
                         );
                         break;
+                    case BaseFilter::NOT_STARTS:
+                        $where[] = sprintf(
+                            ('$not' !== $conditional) ? self::NOT_STARTS_WITH_PATTERN : self::STARTS_WITH_PATTERN,
+                            $value,
+                            $key
+                        );
+                        break;
                     case BaseFilter::ENDS_WITH:
                         $where[] = sprintf(
                             ('$not' !== $conditional) ? self::ENDS_WITH_PATTERN : self::NOT_ENDS_WITH_PATTERN,
+                            $value,
+                            $key
+                        );
+                        break;
+                    case BaseFilter::NOT_ENDS:
+                        $where[] = sprintf(
+                            ('$not' !== $conditional) ? self::NOT_ENDS_WITH_PATTERN : self::ENDS_WITH_PATTERN,
                             $value,
                             $key
                         );
@@ -220,15 +234,19 @@ class MongoDBFilter
                         break;
 
                     case BaseFilter::EMPTY_FILTER:
+                        if ('$not' !== $conditional) {
+                            $filterArray[$key] = ['$exists' => true, '$size' => 0];
+                        } else {
+                            $filterArray[$key] = ['$exists' => true, '$not' => ['$size' => 0]];
+                        }
                         break;
 
                     case BaseFilter::NOT_EMPTY:
-                        break;
-
-                    case BaseFilter::NOT_ENDS:
-                        break;
-
-                    case BaseFilter::NOT_STARTS:
+                        if ('$not' !== $conditional) {
+                            $filterArray[$key] = ['$exists' => true, '$not' => ['$size' => 0]];
+                        } else {
+                            $filterArray[$key] = ['$exists' => true, '$size' => 0];
+                        }
                         break;
                 }
             }

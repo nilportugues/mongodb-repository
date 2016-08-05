@@ -577,6 +577,52 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
 
         $this->assertEquals(2, count($results));
     }
+
+    public function testFindByWithMustBeEmpty()
+    {
+        $filter = new Filter();
+        $filter->must()->empty('totalOrders');
+
+        $fields = new Fields(['name']);
+        $results = $this->repository->findBy($filter, null, $fields);
+
+        $this->assertEquals(0, count($results));
+    }
+
+    public function testFindByWithMustBeNotEmpty()
+    {
+        $filter = new Filter();
+        $filter->must()->notEmpty('totalOrders');
+
+        $fields = new Fields(['name']);
+
+        $results = $this->repository->findBy($filter, null, $fields);
+
+        $this->assertEquals(4, count($results));
+    }
+
+    public function testFindByWithMustNotEndsWith1()
+    {
+        $filter = new Filter();
+        $filter->must()->notEndsWith('name', 'mori');
+
+        $fields = new Fields(['name']);
+        $results = $this->repository->findBy($filter, null, $fields);
+
+        $this->assertEquals(3, count($results));
+    }
+
+    public function testFindByWithMustNotStartsWith1()
+    {
+        $filter = new Filter();
+        $filter->must()->notStartsWith('name', 'Ke');
+
+        $fields = new Fields(['name']);
+        $results = $this->repository->findBy($filter, null, $fields);
+
+        $this->assertEquals(3, count($results));
+    }
+
     //--------------------------------------------------------------------------------
     // MUST NOT FILTER TESTS
     //--------------------------------------------------------------------------------
@@ -788,6 +834,52 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
 
         $this->assertEquals(3, count($results));
     }
+
+    public function testFindByWithMustNotBeEmpty()
+    {
+        $filter = new Filter();
+        $filter->mustNot()->empty('totalOrders');
+
+        $fields = new Fields(['name']);
+        $results = $this->repository->findBy($filter, null, $fields);
+
+        $this->assertEquals(4, count($results));
+    }
+
+    public function testFindByWithMustNotBeNotEmpty()
+    {
+        $filter = new Filter();
+        $filter->mustNot()->notEmpty('totalOrders');
+
+        $fields = new Fields(['name']);
+
+        $results = $this->repository->findBy($filter, null, $fields);
+
+        $this->assertEquals(0, count($results));
+    }
+
+    public function testFindByWithMustNotNotEndsWith1()
+    {
+        $filter = new Filter();
+        $filter->mustNot()->notEndsWith('name', 'mori');
+
+        $fields = new Fields(['name']);
+        $results = $this->repository->findBy($filter, null, $fields);
+
+        $this->assertEquals(1, count($results));
+    }
+
+    public function testFindByWithMustNotNotStartsWith1()
+    {
+        $filter = new Filter();
+        $filter->mustNot()->notStartsWith('name', 'Ke');
+
+        $fields = new Fields(['name']);
+        $results = $this->repository->findBy($filter, null, $fields);
+
+        $this->assertEquals(1, count($results));
+    }
+
     //--------------------------------------------------------------------------------
     // SHOULD FILTER TESTS
     //--------------------------------------------------------------------------------
