@@ -240,15 +240,15 @@ To run the PHPUnit tests at the command line, go to the tests directory and issu
 
 This library attempts to comply with [PSR-1](http://www.php-fig.org/psr/psr-1/), [PSR-2](http://www.php-fig.org/psr/psr-2/), [PSR-4](http://www.php-fig.org/psr/psr-4/).
 
-If you notice compliance oversights, please send a patch via [Pull Request](https://github.com/nilportugues/php-mongodb-repository/pulls).
+If you notice compliance oversights, please send a patch via [Pull Request](https://github.com/PHPRepository/mongodb-repository/pulls).
 
 
 ## Contribute
 
 Contributions to the package are always welcome!
 
-* Report any bugs or issues you find on the [issue tracker](https://github.com/nilportugues/php-mongodb-repository/issues/new).
-* You can grab the source code at the package's [Git Repository](https://github.com/nilportugues/php-mongodb-repository).
+* Report any bugs or issues you find on the [issue tracker](https://github.com/PHPRepository/mongodb-repository/issues/new).
+* You can grab the source code at the package's [Git Repository](https://github.com/PHPRepository/mongodb-repository).
 
 
 ## Support
@@ -256,13 +256,13 @@ Contributions to the package are always welcome!
 Get in touch with me using one of the following means:
 
  - Emailing me at <contact@nilportugues.com>
- - Opening an [Issue](https://github.com/nilportugues/php-mongodb-repository/issues/new)
+ - Opening an [Issue](https://github.com/PHPRepository/mongodb-repository/issues/new)
 
 
 ## Authors
 
 * [Nil Portugués Calderó](http://nilportugues.com)
-* [The Community Contributors](https://github.com/nilportugues/php-mongodb-repository/graphs/contributors)
+* [The Community Contributors](https://github.com/PHPRepository/mongodb-repository/graphs/contributors)
 
 
 ## License
