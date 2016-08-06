@@ -17,7 +17,7 @@ $mapping = new UserMapping();
 $repository = new UserRepository($mapping, $client, 'example_db', 'users');
 $repository->removeAll();
 
-$user = new User(null, 'nilportugues', 'Nil', 'hello@example.org', new DateTime('2016-01-11'));
+$user = new User(1, 'nilportugues', 'Nil', 'hello@example.org', new DateTime('2016-01-11'));
 $user = $repository->add($user);
 
 $userId = new UserId($user->id());
