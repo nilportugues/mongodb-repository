@@ -14,7 +14,7 @@ class UserMapping implements Mapping
      */
     public function identity() : string
     {
-        return 'user_id';
+        return '_id';
     }
 
     /**
@@ -35,7 +35,7 @@ class UserMapping implements Mapping
     public function map() : array
     {
         return [
-            'userId' => 'user_id',
+            'userId' => '_id',
             'username' => 'username',
             'alias' => 'public_username',
             'email' => 'email',
@@ -51,7 +51,7 @@ class UserMapping implements Mapping
     public function fromArray(array $data)
     {
         return new User(
-            $data['user_id'],
+            $data['_id'],
             $data['username'],
             $data['public_username'],
             $data['email'],

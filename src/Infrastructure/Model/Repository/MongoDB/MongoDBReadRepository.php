@@ -23,7 +23,9 @@ class MongoDBReadRepository extends BaseMongoDBRepository implements ReadReposit
     public function find(Identity $id, Fields $fields = null)
     {
         $options = $this->options;
-        $this->fetchSpecificFields(new FieldsInstance($this->getColumns($fields)), $options);
+        $fields = ($fields) ? new FieldsInstance($this->getColumns($fields)) : null;
+
+        $this->fetchSpecificFields($fields, $options);
 
         /** @var BSONDocument $result */
         $result = $this->getCollection()->findOne($this->applyIdFiltering($id), $options);
@@ -92,37 +94,5 @@ class MongoDBReadRepository extends BaseMongoDBRepository implements ReadReposit
         }
 
         return $results;
-    }
-
-    /**
-     * Returns the total amount of elements in the repository given the restrictions provided by the Filter object.
-     *
-     * @param Filter|null $filter
-     *
-     * @return int
-     */
-    public function count(Filter $filter = null) : int
-    {
-        $options = $this->options;
-        $collection = $this->getCollection();
-        $filterArray = [];
-        $this->applyFiltering($filter, $filterArray);
-
-        return $collection->count($filterArray, $options);
-    }
-
-    /**
-     * Returns whether an entity with the given id exists.
-     *
-     * @param $id
-     *
-     * @return bool
-     */
-    public function exists(Identity $id) : bool
-    {
-        $options = $this->options;
-        $result = $this->getCollection()->findOne($this->applyIdFiltering($id), $options);
-
-        return (!empty($result)) ? true : false;
     }
 }

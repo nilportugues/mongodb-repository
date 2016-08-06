@@ -15,16 +15,19 @@ $client = new Client();
 $mapping = new UserMapping();
 
 $repository = new UserRepository($mapping, $client, 'example_db', 'users');
-$user = new User(1, 'nilportugues', 'Nil', 'hello@example.org', new DateTime('2016-01-11'));
-$repository->add($user);
+$repository->removeAll();
 
-$userId = new UserId(1);
+$user = new User(null, 'nilportugues', 'Nil', 'hello@example.org', new DateTime('2016-01-11'));
+$user = $repository->add($user);
+
+$userId = new UserId($user->id());
 print_r($repository->find($userId));
+
 echo PHP_EOL;
 
 $filter = new Filter();
-$filter->must()->beGreaterThanOrEqual('registeredOn.date', '2016-01-01 00:00:00');
-$filter->must()->beLessThan('registeredOn.date', '2016-02-01 00:00:00');
+$filter->must()->beGreaterThanOrEqual('registeredOn.date', '2016-01-01 00:00:00.000000');
+$filter->must()->beLessThan('registeredOn.date', '2016-02-01 00:00:00.000000');
 
 $sort = new Sort();
 $sort->setOrderFor('registeredOn.date', new Order('ASC'));

@@ -18,6 +18,10 @@ trait MongoDBRepositoryHydrator
     {
         $result = parent::find($id, $fields);
 
+        if (empty($result)) {
+            return;
+        }
+
         return $this->mapping->fromArray($result);
     }
 
@@ -85,8 +89,12 @@ trait MongoDBRepositoryHydrator
      */
     public function add(Identity $value)
     {
-        $value = parent::add($value);
+        $result = parent::add($value);
 
-        return $this->mapping->fromArray($value);
+        if (empty($result)) {
+            return;
+        }
+
+        return $this->mapping->fromArray($result);
     }
 }

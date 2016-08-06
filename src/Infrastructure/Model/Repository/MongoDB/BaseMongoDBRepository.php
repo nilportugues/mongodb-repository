@@ -109,15 +109,14 @@ abstract class BaseMongoDBRepository
      */
     protected function applyIdFiltering(Identity $id)
     {
-        $filter = [$this->mapping->identity() => $id->id()];
+        if (false === $this->mapping->autoGenerateId()) {
+            return [$this->mapping->identity() => $id->id()];
+        }
+
         try {
-            if ($this->mapping->autoGenerateId()) {
-                $filter = [self::MONGODB_OBJECT_ID => new ObjectID($id->id())];
-            }
+            return [self::MONGODB_OBJECT_ID => new ObjectID($id->id())];
         } catch (\InvalidArgumentException $e) {
-            $filter = [$this->mapping->identity() => $id->id()];
-        } finally {
-            return $filter;
+            return [self::MONGODB_OBJECT_ID => $id->id()];
         }
     }
 
@@ -189,5 +188,37 @@ abstract class BaseMongoDBRepository
         }
 
         return $newFields;
+    }
+
+    /**
+     * Returns the total amount of elements in the repository given the restrictions provided by the Filter object.
+     *
+     * @param Filter|null $filter
+     *
+     * @return int
+     */
+    public function count(Filter $filter = null) : int
+    {
+        $options = $this->options;
+        $collection = $this->getCollection();
+
+        $filterArray = [];
+        $this->applyFiltering($filter, $filterArray);
+
+        return $collection->count($filterArray, $options);
+    }
+
+    /**
+     * Returns whether an entity with the given id exists.
+     *
+     * @param $id
+     *
+     * @return bool
+     */
+    public function exists(Identity $id) : bool
+    {
+        $result = $this->getCollection()->findOne($this->applyIdFiltering($id), $this->options);
+
+        return (!empty($result)) ? true : false;
     }
 }

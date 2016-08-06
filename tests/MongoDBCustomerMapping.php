@@ -52,10 +52,6 @@ class MongoDBCustomerMapping implements Mapping
      */
     public function fromArray(array $data)
     {
-        if (empty($data)) {
-            return;
-        }
-
         return new Clients(
             !empty($data['customer_id']) ? $data['customer_id'] : '',
             !empty($data['customer_name']) ? $data['customer_name'] : '',

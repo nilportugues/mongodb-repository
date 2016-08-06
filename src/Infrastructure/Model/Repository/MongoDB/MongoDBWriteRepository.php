@@ -35,38 +35,6 @@ class MongoDBWriteRepository extends BaseMongoDBRepository implements WriteRepos
     }
 
     /**
-     * Returns the total amount of elements in the repository given the restrictions provided by the Filter object.
-     *
-     * @param Filter|null $filter
-     *
-     * @return int
-     */
-    public function count(Filter $filter = null) : int
-    {
-        $options = $this->options;
-        $collection = $this->getCollection();
-
-        $filterArray = [];
-        $this->applyFiltering($filter, $filterArray);
-
-        return $collection->count($filterArray, $options);
-    }
-
-    /**
-     * Returns whether an entity with the given id exists.
-     *
-     * @param $id
-     *
-     * @return bool
-     */
-    public function exists(Identity $id) : bool
-    {
-        $result = $this->getCollection()->findOne($this->applyIdFiltering($id), $this->options);
-
-        return (!empty($result)) ? true : false;
-    }
-
-    /**
      * Adds a new entity to the storage.
      *
      * @param Identity $value
@@ -109,9 +77,9 @@ class MongoDBWriteRepository extends BaseMongoDBRepository implements WriteRepos
                 }
             }
 
-            $id = $insertValue[$this->mapping->identity()];
-            if ($this->mapping->autoGenerateId()) {
-                $id = null;
+            $id = null;
+            if (!$this->mapping->autoGenerateId()) {
+                $id = $insertValue[$this->mapping->identity()];
             }
 
             if (null === $id) {
@@ -292,9 +260,7 @@ class MongoDBWriteRepository extends BaseMongoDBRepository implements WriteRepos
             $insertValue[$field] = $flattenedValue[$objectProperty];
         }
 
-        if ($this->mapping->autoGenerateId()) {
-            $insertValue[self::MONGODB_OBJECT_ID] = new ObjectID($value[self::MONGODB_OBJECT_ID]);
-        } else {
+        if (!$this->mapping->autoGenerateId()) {
             $insertValue[$this->mapping->identity()] = $value->id();
         }
 
@@ -302,7 +268,7 @@ class MongoDBWriteRepository extends BaseMongoDBRepository implements WriteRepos
         $fetchCondition = [$this->mapping->identity() => $value->id()];
 
         if ($this->mapping->autoGenerateId()) {
-            $fetchCondition = $inserted->getInsertedId();
+            $fetchCondition = [self::MONGODB_OBJECT_ID => $inserted->getInsertedId()];
         }
 
         $result = $this->getCollection()->findOne($fetchCondition, $this->options);
