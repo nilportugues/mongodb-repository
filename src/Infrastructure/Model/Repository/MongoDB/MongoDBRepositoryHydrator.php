@@ -91,11 +91,7 @@ trait MongoDBRepositoryHydrator
     {
         $result = parent::add($value);
 
-        if (empty($result)) {
-            return;
-        }
-
-        return $this->mapping->fromArray($result);
+        return (!empty($result)) ? $this->mapping->fromArray($result) : null;
     }
 
     /**

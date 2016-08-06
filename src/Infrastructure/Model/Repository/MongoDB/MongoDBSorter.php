@@ -48,6 +48,7 @@ class MongoDBSorter
      * @param $propertyName
      *
      * @return mixed
+     * @codeCoverageIgnore
      */
     protected static function guardColumnExists($columns, $propertyName)
     {
