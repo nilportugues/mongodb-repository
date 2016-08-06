@@ -1,6 +1,6 @@
 <?php
 
-namespace NilPortugues\Example;
+namespace NilPortugues\Example\CustomId;
 
 use DateTime;
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Mapping;
@@ -14,7 +14,7 @@ class UserMapping implements Mapping
      */
     public function identity() : string
     {
-        return '_id';
+        return 'user_id';
     }
 
     /**
@@ -35,7 +35,7 @@ class UserMapping implements Mapping
     public function map() : array
     {
         return [
-            'userId' => '_id',
+            'userId' => 'user_id',
             'username' => 'username',
             'alias' => 'public_username',
             'email' => 'email',
@@ -51,7 +51,7 @@ class UserMapping implements Mapping
     public function fromArray(array $data)
     {
         return new User(
-            $data['_id'],
+            $data['user_id'],
             $data['username'],
             $data['public_username'],
             $data['email'],
@@ -66,6 +66,6 @@ class UserMapping implements Mapping
      */
     public function autoGenerateId() : bool
     {
-        return true;
+        return false;
     }
 }
