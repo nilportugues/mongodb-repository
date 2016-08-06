@@ -6,7 +6,7 @@ use DateTime;
 use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Mapping;
 use NilPortugues\Tests\Foundation\Helpers\Clients;
 
-class MongoDBCustomerMapping implements Mapping
+class MongoDBCustomerMappingWithGeneratedId implements Mapping
 {
     /**
      * Returns the name of the collection or table.
@@ -27,7 +27,7 @@ class MongoDBCustomerMapping implements Mapping
     public function map(): array
     {
         return [
-            'id' => 'customer_id',
+            'id' => '_id',
             'name' => 'customer_name',
             'totalOrders' => 'total_orders',
             'totalEarnings' => 'total_earnings',
@@ -42,7 +42,7 @@ class MongoDBCustomerMapping implements Mapping
      */
     public function identity(): string
     {
-        return 'customer_id';
+        return '_id';
     }
 
     /**
@@ -53,7 +53,7 @@ class MongoDBCustomerMapping implements Mapping
     public function fromArray(array $data)
     {
         return new Clients(
-            !empty($data['customer_id']) ? $data['customer_id'] : '',
+            !empty($data['_id']) ? $data['_id'] : '',
             !empty($data['customer_name']) ? $data['customer_name'] : '',
             !empty($data['created_at']) ? (new DateTime())->setTimestamp(strtotime($data['created_at'])) : new DateTime(),
             !empty($data['total_orders']) ? $data['total_orders'] : '',
@@ -68,6 +68,6 @@ class MongoDBCustomerMapping implements Mapping
      */
     public function autoGenerateId(): bool
     {
-        return false;
+        return true;
     }
 }

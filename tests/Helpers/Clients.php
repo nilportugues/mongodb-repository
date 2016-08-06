@@ -31,6 +31,14 @@ class Clients implements Identity
     }
 
     /**
+     * @param mixed $name
+     */
+    public function setName($name)
+    {
+        $this->name = $name;
+    }
+
+    /**
      * Returns value for `name`.
      *
      * @return mixed

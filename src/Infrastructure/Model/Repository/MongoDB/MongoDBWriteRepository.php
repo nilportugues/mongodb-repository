@@ -83,6 +83,7 @@ class MongoDBWriteRepository extends BaseMongoDBRepository implements WriteRepos
             }
 
             if (null === $id) {
+                unset($insertValue[self::MONGODB_OBJECT_ID]);
                 $documents[][BulkWrite::INSERT_ONE] = [$insertValue];
             } else {
                 $mayRequireInsert[][BulkWrite::INSERT_ONE] = [$insertValue];
@@ -91,31 +92,32 @@ class MongoDBWriteRepository extends BaseMongoDBRepository implements WriteRepos
             }
         }
 
-        if (empty($documents)) {
-            return [];
+        $addedValues = [];
+        if (!empty($documents)) {
+            $result = $this->getCollection()->bulkWrite($documents, $options);
+            $insertedIds = $result->getInsertedIds();
+            $updatedIds = $result->getUpsertedIds();
+
+            if (0 === count($updatedIds) && 0 !== count($mayRequireInsert)) {
+                $result = $this->getCollection()->bulkWrite($mayRequireInsert, $options);
+                $updatedIds = $result->getInsertedIds();
+            }
+            unset($mayRequireInsert);
+
+            $stringIds = [];
+            $ids = array_merge($updatedIds, $insertedIds);
+
+            foreach ($ids as $id) {
+                $stringIds[] = ($this->mapping->autoGenerateId()) ? new ObjectID($id) : (string) $id;
+            }
+
+            $updateFilter = new DomainFilter();
+            $updateFilter->must()->includeGroup(self::MONGODB_OBJECT_ID, $stringIds);
+
+            $addedValues = $this->findByHelper($updateFilter);
         }
 
-        $result = $this->getCollection()->bulkWrite($documents, $options);
-        $insertedIds = $result->getInsertedIds();
-        $updatedIds = $result->getUpsertedIds();
-
-        if (0 === count($updatedIds) && 0 !== count($mayRequireInsert)) {
-            $result = $this->getCollection()->bulkWrite($mayRequireInsert, $options);
-            $updatedIds = $result->getInsertedIds();
-        }
-        unset($mayRequireInsert);
-
-        $stringIds = [];
-        $ids = array_merge($updatedIds, $insertedIds);
-
-        foreach ($ids as $id) {
-            $stringIds[] = (string) $id;
-        }
-
-        $updateFilter = new DomainFilter();
-        $updateFilter->must()->includeGroup(self::MONGODB_OBJECT_ID, $stringIds);
-
-        return $this->findByHelper($updateFilter);
+        return $addedValues;
     }
 
     /**
@@ -208,7 +210,10 @@ class MongoDBWriteRepository extends BaseMongoDBRepository implements WriteRepos
         $idField = $this->mapping->identity();
 
         if ($this->mapping->autoGenerateId()) {
-            $id = new ObjectID($flattenedValue[self::MONGODB_OBJECT_ID]);
+            $keys = array_flip($this->mapping->map());
+            $primaryKey = $keys[$this->mapping->identity()];
+
+            $id = new ObjectID($flattenedValue[$primaryKey]);
             $idField = self::MONGODB_OBJECT_ID;
         }
 
