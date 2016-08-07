@@ -1,9 +1,62 @@
 # MongoDB Repository
 ![PHP7 Tested](http://php-eye.com/badge/nilportugues/mongodb-repository/php70.svg)
-[![Build Status](https://travis-ci.org/PHPRepository/mongodb-repository.svg)](https://travis-ci.org/PHPRepository/mongodb-repository) [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/nilportugues/php-mongodb-repository/badges/quality-score.png??b=master)](https://scrutinizer-ci.com/g/nilportugues/php-mongodb-repository/?branch=master) [![SensioLabsInsight](https://insight.sensiolabs.com/projects/b6284e28-ca76-4836-b120-2341b168a7db/mini.png?gold)](https://insight.sensiolabs.com/projects/b6284e28-ca76-4836-b120-2341b168a7db) [![Latest Stable Version](https://poser.pugx.org/nilportugues/mongodb-repository/v/stable?)](https://packagist.org/packages/nilportugues/mongodb-repository) [![Total Downloads](https://poser.pugx.org/nilportugues/mongodb-repository/downloads?)](https://packagist.org/packages/nilportugues/mongodb-repository) [![License](https://poser.pugx.org/nilportugues/mongodb-repository/license?)](https://packagist.org/packages/nilportugues/mongodb-repository)
+[![Build Status](https://travis-ci.org/PHPRepository/mongodb-repository.svg)](https://travis-ci.org/PHPRepository/mongodb-repository)  [![SensioLabsInsight](https://insight.sensiolabs.com/projects/9fc69e98-13b4-4ea5-a5fb-c394b42586e3/mini.png?gold)](https://insight.sensiolabs.com/projects/9fc69e98-13b4-4ea5-a5fb-c394b42586e3) [![Latest Stable Version](https://poser.pugx.org/nilportugues/mongodb-repository/v/stable)](https://packagist.org/packages/nilportugues/mongodb-repository) [![Total Downloads](https://poser.pugx.org/nilportugues/mongodb-repository/downloads)](https://packagist.org/packages/nilportugues/mongodb-repository) [![License](https://poser.pugx.org/nilportugues/mongodb-repository/license)](https://packagist.org/packages/nilportugues/mongodb-repository)
 [![Donate](https://www.paypalobjects.com/en_US/i/btn/btn_donate_SM.gif)](https://paypal.me/nilportugues)
 
-MongoDB Repository using *[nilportugues/repository](https://github.com/nilportugues/php-repository)* as foundation using *[mongodb/mongodb](https://github.com/mongodb/mongo-php-library)*.
+MongoDB Repository library aims to reduce the time spent writing repositories. MongoDB Repository using *[nilportugues/repository](https://github.com/nilportugues/php-repository)* as foundation using *[mongodb/mongodb](https://github.com/mongodb/mongo-php-library)*.
+
+Motivation for this library was the boredom of writing MongoDB to do the same thing over and over again in multiple projects.
+
+MongoDB Repository allows you to fetch, paginate and operate with data easily without adding overhead and following good practices.
+
+Table of Contents
+=================
+
+  * [Features](#features)
+  * [Installation](#installation)
+  * [Usage](#usage)
+  * [Mapping](#mapping)
+    * [Entity class](#entity-class)
+    * [Mapping class](#mapping-class)
+    * [Mapping the Repository](#mapping-the-repository)
+  * [Repository](#repository)
+    * [Methods](#methods)
+      * [Available in MongoDBRepository](#available-in-mongodbrepository)
+      * [Available in MongoDBWriteRepository](#available-in-mongodbwriterepository)
+      * [Available in MongoDBReadRepository](#available-in-mongodbreadrepository)
+      * [Available in MongoDBPageRepository](#available-in-mongodbpagerepository)
+  * [Data Operations](#data-operations)
+    * [Fields](#fields)
+    * [Filtering](#filtering)
+    * [Pagination](#pagination)
+      * [Pageable](#pageable)
+      * [Page object](#page-object)
+    * [Sorting](#sorting)
+      * [Ordering](#ordering)
+  
+## Features
+
+- **Repository pattern right from the start.**
+- **All operations available from the beginning:**
+  - Search the repository using PHP objects
+  - No need to write MongoDB for basic operations.
+  - Filtering is available using the Filter object.
+  - Fetching certaing fields is available using the Fields Object.
+  - Pagination is solved available using the Page and Pageable objects.
+- **Custom operations can be written using DBAL.**
+- **Want to change persistence layer? Provided repository alternatives are:**
+  - *[InMemoryRepository](https://github.com/PHPRepository/repository)*: for testing purposes
+  - *[FileRepository](https://github.com/PHPRepository/filesystem-repository)*: sites without DB access or for testing purposes.
+  - *[SQLRepository](https://github.com/PHPRepository/sql-repository)*: migration to SQL databases is possible.
+- **Mapping written in PHP.**
+  - Supports custom Data Types (a.k.a Value Objects). 
+  - Mapping deep data structures made easy using dot-notation.
+- **Hydratation is optional.**
+  - Use hydratation when needed. Use `MongoDBRepositoryHydrator` trait to enable it.
+- **Both custom ids and autoincremental ids are supported**
+  - Want to use UUID or a custom ID strategy? No problem! 
+- **Caching layer required? Easily to add!**
+  - Require the *[Repository Cache](https://github.com/PHPRepository/repository-cache)* package from Composer to add consistent caching to all operations.
 
 ## Installation
 
@@ -13,169 +66,247 @@ Use [Composer](https://getcomposer.org) to install the package:
 $ composer require nilportugues/mongodb-repository
 ```
 
-## Why? Drivers and Multiple Implementations!
-
-Using this implementation you can switch it out to test your code without setting up databases.
-
-Doesn't sound handy? Let's think of yet another use case you'll love using this. `Functional tests` and `Unitary tests`.
-
-No database connection will be needed, nor fakes. Using an `InMemoryRepository` or `FileSystemRepository` implementation will make those a breeze to code. And once the tests finish, all data may be destroyed with no worries at all.
-
-**Available drivers:**
-
-Also, if you feel like changing the repository implementation, no logic changes would be needed, as there are a set of drivers for you to use out of the box:
-
-- `composer require nilportugues/repository-cache` for [caching](https://github.com/nilportugues/php-repository-cache).
-- `composer require nilportugues/repository` for an [InMemoryRepository implementation](https://github.com/nilportugues/php-repository).
-- `composer require nilportugues/filesystem-repository` for a [FileSystemRepository implementation](https://github.com/nilportugues/php-filesystem-repository).
-- `composer require nilportugues/eloquent-repository` for a [SQL Eloquent implementation](https://github.com/nilportugues/php-eloquent-repository).
-- `composer require nilportugues/doctrine-repository` for a [SQL Doctrine implementation](https://github.com/nilportugues/php-doctrine-repository).
-- `composer require nilportugues/eloquent-mongodb-repository` for a [MongoDB Eloquent implementation](https://github.com/nilportugues/php-eloquent-mongodb-repository).
-
-
-
-
 ## Usage
 
-This is how you use MongoDB in any project. 
+**Show me the code**
+
+See the [/example](https://github.com/PHPRepository/mongodb-repository/tree/master/example) directory. Examples for both `Custom ID` and `AutoIncremental ID` are provided.
+
+**Explanation**
+
+- You require a class implementing the `Mapping` interface provided
+- You require a class implementing the `Identity` interface provided. Adds 2 methods, `id()` and `__toString`.
+- You require a class to extend from `MongoDBRepository` class provided. Inject your PDO connection and the Mapping class to the `MongoDBRepository`
+
+You're good to go.
+
+--
+
+# Mapping
+
+Mapping must implement the `Mapping` interface. 
+
+Mapping classes are used to read data from entities and save them in the storage of choice. This is done by mapping the Entities fields and specifying which fields and how are actually stored in the data storage.
+
+For complex objects, let's say an Entity that has a Value Object, it is possible to still do one single mapping on the Entity and access the Value Object properties to get them stored.
+
+Mappings are also used to hydrate data into it's entities again if the hydrator trait is used.
+
+## Entity class
+
+Remember, an Entity must implement the `Identity` interface to work with MongoDBRepository. This Entity can be any class of yours. 
 
 ```php
-<?php
-$uri = 'mongodb://localhost:27017';
-$client = new \MongoDB\Client($uri));
+use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Identity;
+
+class User implements Identity
+{
+    protected $userId;
+    protected $username;
+    protected $alias;
+    protected $email;
+    protected $registeredOn;
+
+    /**
+     * User constructor.
+     *
+     * @param          $userId
+     * @param          $username
+     * @param          $alias
+     * @param          $email
+     * @param \DateTime $registeredOn
+     */
+    public function __construct($userId, $username, $alias, $email, \DateTime $registeredOn)
+    {
+        $this->userId = $userId;
+        $this->username = $username;
+        $this->alias = $alias;
+        $this->email = $email;
+        $this->registeredOn = $registeredOn;
+    }
+
+   // ... your getters/setters
+  
+    public function id()
+    {
+        return $this->userId;
+    }
+  
+    public function __toString()
+    {
+        return (string) $this->id();
+    }
+}
 ```
 
-Now that MongoDB is running, we can use the Repository.
+## Mapping class
 
-### One Repository for One MongoDB Model
-
-To be faithful to the repository pattern, using MongoDB Models internally is OK, Business objects should be returned. 
-
-Therefore, you should translate MongoDB to Business representations and the other way round. This is represented by `$userAdapter` in the example below.
-
-The fully implementation should be along the lines:
+All methods from Mapping interface are mandatory. 
 
 ```php
-<?php
-use NilPortugues\Foundation\Infrastructure\Model\Repository\MongoDB\MongoDBRepository;
+use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Mapping;
 
-class UserRepository extends MongoDBRepository 
+class UserMapping implements Mapping
 {
-    protected $userAdapter;       
-    protected $primaryKey = 'userId'; //if not set, defaults to "id"
-    
     /**
-     * @param \MongoDB\Client $client
-     * @param $userAdapter
+     * Name of the identity field in storage.
      */
-    public function __construct($client, $userAdapter)
+    public function identity() : string
     {
-        $this->userAdapter = $userAdapter; 
-        parent::__construct($client, 'databaseName', 'collectionName');
+        return 'user_id';
     }
-    
+
     /**
-     * {@inheritdoc}
-     */    
-    public function find(Identity $id, Fields $fields = null)
-    {
-        $model = parent::find($id, $fields);   
-        
-        return $this->userAdapter->fromMongoDB($model);
-    }
-    
-    /**
-     * {@inheritdoc}
-     */    
-    public function findBy(Filter $filter = null, Sort $sort = null, Fields $fields = null)
-    {
-        $modelArray = parent::findBy($filter, $sort, $fields);   
-        
-        return $this->fromMongoDBArray($modelArray);
-    }       
-    
-    /**
-     * {@inheritdoc}
+     * Returns the table name.
      */
-    public function findAll(Pageable $pageable = null)
+    public function name() : string
     {
-        $page = parent::findAll($pageable);
-        
-        return new Page(
-            $this->fromMongoDBArray($page->content()),
-            $page->totalElements(),
-            $page->pageNumber(),
-            $page->totalPages(),
-            $page->sortings(),
-            $page->filters(),
-            $page->fields()
+        return 'users';
+    }
+
+    /**
+     * Keys are object properties without property defined in identity(). 
+     * Values its MongoDB column equivalents.
+     */
+    public function map() : array
+    {
+        return [
+            'userId' => 'user_id',
+            'username' => 'username',
+            'alias' => 'public_username',
+            'email' => 'email',
+            
+            // Notice how we are accessing date value inside
+            // the \DateTime object! We use dot notation to 
+            // access deep values.
+            
+            'registeredOn.date' => 'created_at', 
+        ];
+    }
+
+    /**
+     * @param array $data
+     * @return User
+     */
+    public function fromArray(array $data)
+    {
+        return new User(
+            $data['user_id'],
+            $data['username'],
+            $data['public_username'],
+            $data['email'],
+            new \DateTime($data['created_at'])
         );
-    } 
+    }
 
-   /**
-    * @param array $modelArray
-    * @return array
-    */
-   protected function fromMongoDBArray(array $modelArray)
-   {
-        $results = [];
-        foreach ($modelArray as $model) {            
-            $results[] = $this->userAdapter->fromMongoDB($model);
-        }
-        
-        return $results;
-   } 
+    /**
+     * The automatic generated strategy used will be the data-store's if set to true.
+     */
+    public function autoGenerateId() : bool
+    {
+        return true;
+    }
 }
 ```
 
-A sample implementation can be found in the [/example](https://github.com/nilportugues/php-mongodb-repository/tree/master/example) directory.
+## Mapping the Repository
 
-### One MongoDBRepository for All MongoDB Models
-
-While **this is not the recommended way**, as a repository should only return one kind of Business objects, this works for RAD projects.
-
-While the amount of core is less than the previous example, bare in mind that your code will be coupled with MongoDB's data structure.
-
+Finally, it's usage is straight-forward:
 
 ```php
-<?php
+use MongoDB\Client;
 use NilPortugues\Foundation\Infrastructure\Model\Repository\MongoDB\MongoDBRepository;
+use NilPortugues\Foundation\Infrastructure\Model\Repository\MongoDB\MongoDBRepositoryHydrator;
 
-class UserRepository extends MongoDBRepository 
+class UserRepository extends MongoDBRepository
 {
-    
+    use MongoDBRepositoryHydrator;
 }
 
-class BlogPostRepository extends MongoDBRepository 
-{
-    
-}
+$client = new Client();
+$mapping = new UserMapping();
+$repository = new UserRepository($mapping, $client, 'example_db', 'users');
 ```
 
-## Filtering data
+---
 
-Filtering is as simple as using the `Filter` object. For instance, lets retrieve how many users are named `Ken`. 
- 
-```php
-<?php
-use NilPortugues\Foundation\Domain\Model\Repository\Filter;
+# Repository 
 
-$repository = new UserRepository();
+The repository class implements all the methods required to interact and filter your data. 
 
-$filter = new Filter();
-$filter->must()->contain('name', 'Ken');
+MongoDBRepository can handle all CRUD operations by default by extending the `MongoDBRepository` class.
 
-echo $repository->count($filter);
-```
+If you're not into CRUD, you can also have read-only, write-only and pagination-only repositories:
 
-Notice how the key `name` matches the database column `name` in the `users` table.
+- For read-only repositories extend the `MongoDBReadRepository` class. 
+- For write-only repositories extend the `MongoDBWriteRepository` class. 
+- For pagination-only repositories extend the `MongoDBPageRepository` class. 
 
-**Available options**
 
-Filter allow you to use `must()`, `mustNot()` and `should()` methods to set up a fine-grained search. These provide a fluent interface with the following methods available: 
+## Methods
+
+### Available in MongoDBRepository
+
+All the methods listed under MongoDBWriteRepository, MongoDBReadRepository and MongoDBPageRepository.
+
+### Available in MongoDBWriteRepository
+
+- `public function add($value)`
+- `public function addAll(array $values)`
+- `public function remove(Identity $id)`
+- `public function removeAll(Filter $filter = null)`
+- `public function transactional(callable $transaction)`
+- `public function count(Filter $filter = null)`
+- `public function exists(Identity $id)`
+
+### Available in MongoDBReadRepository
+
+- `public function find(Identity $id, Fields $fields = null)`
+- `public function findBy(Filter $filter = null, Sort $sort = null, Fields $fields = null)`
+- `public function findByDistinct(Fields $distinctFields, Filter $filter = null, Sort $sort = null, Fields $fields = null)`
+- `public function count(Filter $filter = null)`
+- `public function exists(Identity $id)`
+
+### Available in MongoDBPageRepository
+
+- `public function findAll(Pageable $pageable = null)`
+- `public function count(Filter $filter = null)`
+- `public function exists(Identity $id)`
+
+---
+
+# Data Operations
+
+All data can be extracted by fields name, using filters, applying ordering and pages, capable of applying fields, filters and ordering criteria.
+
+## Fields
+
+Selecting by field will make hydratation fail. Currently partial object hydratation is not supported.
+
+**Class:** `NilPortugues\Foundation\Domain\Model\Repository\Fields`
+
+**Methods:**
+- `public function __construct(array $fields = [])`
+- `public function add($field)`
+- `public function get()`
+
+## Filtering
+
+**Class:** `NilPortugues\Foundation\Domain\Model\Repository\Filter`
+
+**Methods:**
+- `public function filters()`
+- `public function must()`
+- `public function mustNot()`
+- `public function should()`
+- `public function clear()`
     
+For **must()**, **mustNot()** and **should()**, the methods available are:
+
+- `public function notStartsWith($filterName, $value)`
+- `public function notEndsWith($filterName, $value)`
 - `public function notEmpty($filterName)`
-- `public function hasEmpty($filterName)`
+- `public function empty($filterName)`
 - `public function startsWith($filterName, $value)`
 - `public function endsWith($filterName, $value)`
 - `public function equal($filterName, $value)`
@@ -190,51 +321,84 @@ Filter allow you to use `must()`, `mustNot()` and `should()` methods to set up a
 - `public function beGreaterThan($filterName, $value)`
 - `public function beLessThanOrEqual($filterName, $value)`
 - `public function beLessThan($filterName, $value)`
-    
-## Sorting data
+- `public function clear()`
+- `public function get()`
+- `public function hasEmpty($filterName)` 
 
-Sorting is straight forward. Create an instance of Sort and pass in the column names and ordering.
+## Pagination 
 
-```php
-<?php
-use NilPortugues\Foundation\Domain\Model\Repository\Sort;
+Pagination is handled by two objects, `Pageable` that has the requirements to paginate, and `Page` that it's actually the page with the page data, such as page number, total number, and the data.
 
-$repository = new UserRepository();
+### Pageable
 
-$filter = null; //all records
-$sort = new Sort(['name', 'id'], new Order('ASC', 'DESC'));
-$fields = null; //all columns
+**Class:** `NilPortugues\Foundation\Domain\Model\Repository\Pageable`
 
-$results = $repository->findBy($filter, $sort, $fields);
-```
+**Methods:**
+- `public function __construct($pageNumber, $pageSize, Sort $sort = null, Filter $filter = null, Fieldse $fields = null)`
+- `public function offset()`
+- `public function pageNumber()`
+- `public function sortings()`
+- `public function next()`
+- `public function pageSize()`
+- `public function previousOrFirst()`
+- `public function hasPrevious()`
+- `public function first()`
+- `public function filters()`
+- `public function fields()`
 
-## Fields data
+### Page object
 
-Create a Fields object to fetch only selected columns. If no Fields object is passed, all columns are selected by default.
+**Class:** `NilPortugues\Foundation\Domain\Model\Repository\Page`
 
-```php
-<?php
-use NilPortugues\Foundation\Domain\Model\Repository\Contracts\Fields;
+**Methods:**
+- `public function __construct(array $elements, $totalElements, $pageNumber, $totalPages, Sort $sort = null, Filter $filter = null, Fields $fields = null)`
+- `public function content()`
+- `public function hasPrevious()`
+- `public function isFirst()`
+- `public function isLast()`
+- `public function hasNext()`
+- `public function pageSize()`
+- `public function pageNumber()`
+- `public function totalPages()`
+- `public function nextPageable()`
+- `public function sortings()`
+- `public function filters()`
+- `public function fields()`
+- `public function previousPageable()`
+- `public function totalElements()`
+- `public function map(callable $converter)`
 
-$repository = new UserRepository();
+## Sorting
 
-$filter = null; //all records
-$sort = null; //existing order
-$fields = new Fields(['name', 'id']);
+**Class:** `NilPortugues\Foundation\Domain\Model\Repository\Sort`
 
-$results = $repository->findBy($filter, $sort, $fields);
-```
+**Methods:**
+- `public function __construct(array $properties = [], Order $order = null)`
+- `public function andSort(SortInterface $sort)`
+- `public function orders()`
+- `public function equals(SortInterface $sort)`
+- `public function orderFor($propertyName)`
+- `public function setOrderFor($propertyName, Order $order)`
+- `public function property($propertyName)`
 
-## Fetching data
+### Ordering
 
-Repository allows you to fetch data from the database by using the following methods:
+Sometimes you want to sort by multiple fields, this is where Order comes in play.
 
-- `public function findAll(Pageable $pageable = null)`
-- `public function find(Identity $id, Fields $fields = null)`
-- `public function findBy(Filter $filter = null, Sort $sort = null, Fields $fields = null)`
+**Class**: `NilPortugues\Foundation\Domain\Model\Repository\Order`
+
+**Methods:**
+- `public function __construct($direction)`
+- `public function isDescending()`
+- `public function isAscending()`
+- `public function __toString()`
+- `public function equals($object)`
+- `public function direction()`
 
 
-## Quality
+--
+
+# Quality
 
 To run the PHPUnit tests at the command line, go to the tests directory and issue phpunit.
 
@@ -242,16 +406,14 @@ This library attempts to comply with [PSR-1](http://www.php-fig.org/psr/psr-1/),
 
 If you notice compliance oversights, please send a patch via [Pull Request](https://github.com/PHPRepository/mongodb-repository/pulls).
 
-
-## Contribute
+# Contribute
 
 Contributions to the package are always welcome!
 
 * Report any bugs or issues you find on the [issue tracker](https://github.com/PHPRepository/mongodb-repository/issues/new).
 * You can grab the source code at the package's [Git Repository](https://github.com/PHPRepository/mongodb-repository).
 
-
-## Support
+# Support
 
 Get in touch with me using one of the following means:
 
@@ -259,11 +421,12 @@ Get in touch with me using one of the following means:
  - Opening an [Issue](https://github.com/PHPRepository/mongodb-repository/issues/new)
 
 
-## Authors
+# Authors
 
 * [Nil Portugués Calderó](http://nilportugues.com)
 * [The Community Contributors](https://github.com/PHPRepository/mongodb-repository/graphs/contributors)
 
 
-## License
+# License
 The code base is licensed under the [MIT license](LICENSE).
+
