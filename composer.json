@@ -31,5 +31,8 @@
     "psr-4": {
       "NilPortugues\\Tests\\Foundation\\": "tests/"
     }
-  }
+  },
+  "suggest": {
+    "nilportugues/repository-cache": "Cache database queries to improve performance."
+  }  
 }
