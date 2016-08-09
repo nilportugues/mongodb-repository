@@ -52,6 +52,12 @@ class MongoDBRepositoryTest extends \PHPUnit_Framework_TestCase
         $this->repository->addAll([$client1, $client2, $client3, $client4]);
     }
 
+
+    public function testGetDriver()
+    {
+        $this->assertInstanceOf('\MongoDB\Collection',  $this->repository->getDriver());
+    }
+
     public function testItCanUpdateAnExistingClient()
     {
         $client1 = new Clients(1, 'Homer Simpson', new DateTime('2014-12-11'), 3, 25.125);

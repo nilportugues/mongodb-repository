@@ -111,6 +111,14 @@ class MongoDBRepository implements ReadRepository, WriteRepository, PageReposito
     }
 
     /**
+     * @return \MongoDB\Collection
+     */
+    public function getDriver()
+    {
+        return $this->readRepository->getDriver();
+    }
+
+    /**
      * Returns the total amount of elements in the repository given the restrictions provided by the Filter object.
      *
      * @param Filter|null $filter

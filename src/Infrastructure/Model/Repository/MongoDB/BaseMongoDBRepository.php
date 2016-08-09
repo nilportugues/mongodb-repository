@@ -82,6 +82,14 @@ abstract class BaseMongoDBRepository
     /**
      * @return \MongoDB\Collection
      */
+    public function getDriver()
+    {
+        return $this->getCollection();
+    }
+
+    /**
+     * @return \MongoDB\Collection
+     */
     protected function getCollection()
     {
         if (null === $this->collection) {
