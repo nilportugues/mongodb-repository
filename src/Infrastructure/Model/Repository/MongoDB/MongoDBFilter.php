@@ -125,6 +125,10 @@ class MongoDBFilter
         }
 
         $filterArray[$mongoOperator] = array_merge($filterArray[$mongoOperator], [$rawConditions]);
+
+        if (empty($filterArray[$mongoOperator])) {
+            unset($filterArray[$mongoOperator]);
+        }
     }
 
     /**
@@ -138,10 +142,6 @@ class MongoDBFilter
     {
         foreach ($filters as $filterName => $valuePair) {
             foreach ($valuePair as $key => $value) {
-                
-                if (false === array_key_exists($key, $columns)) {
-                    break;
-                }
                 
                 $key = self::fetchColumnName($columns, $key);
 
