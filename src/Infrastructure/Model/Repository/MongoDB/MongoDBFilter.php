@@ -46,12 +46,10 @@ class MongoDBFilter
         $columns = $mapping->map();
 
         foreach ($filter->filters() as $condition => $filters) {
-            if (array_key_exists($condition, $columns)) {
-                $filters = self::removeEmptyFilters($filters);
-                if (count($filters) > 0) {
-                    self::processConditions($columns, $filterArray, $condition, $filters);
-                }
-            }    
+            $filters = self::removeEmptyFilters($filters);
+            if (count($filters) > 0) {
+                self::processConditions($columns, $filterArray, $condition, $filters);
+            }
         }
 
         if (!empty($filterArray['$or']) && count($filterArray['$or']) > 0) {
@@ -140,6 +138,11 @@ class MongoDBFilter
     {
         foreach ($filters as $filterName => $valuePair) {
             foreach ($valuePair as $key => $value) {
+                
+                if (false === array_key_exists($key, $columns)) {
+                    break;
+                }
+                
                 $key = self::fetchColumnName($columns, $key);
 
                 if (is_array($value) && count($value) > 0) {
